@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>💧 โปรแกรมคำนวณค่าน้ำประจำเดือน</title>
+<style>
+:root{
+  --bg:#f5f7fa; --card:#ffffff; --text:#1a2233; --sub:#5b6472;
+  --primary:#2563eb; --primary-dark:#1d4ed8; --border:#e2e6ec;
+  --head:#eef2ff; --paid:#e8f8ee; --paid-text:#1a7d3a;
+  --unpaid:#fff4e5; --unpaid-text:#a35b00; --warn:#fdeaea; --warn-text:#c0392b;
+  --wait:#f1f3f6; --wait-text:#6b7280;
+  --err-border:#e0453f;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12151c; --card:#1b1f29; --text:#e8ebf1; --sub:#9aa3b2;
+    --primary:#4f8dff; --primary-dark:#3a73e0; --border:#2c3140;
+    --head:#232840; --paid:#163826; --paid-text:#5fd88a;
+    --unpaid:#3a2a10; --unpaid-text:#e0a94d; --warn:#3a1616; --warn-text:#ff8a8a;
+    --wait:#232733; --wait-text:#9aa3b2;
+    --err-border:#ff6b64;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12151c; --card:#1b1f29; --text:#e8ebf1; --sub:#9aa3b2;
+  --primary:#4f8dff; --primary-dark:#3a73e0; --border:#2c3140;
+  --head:#232840; --paid:#163826; --paid-text:#5fd88a;
+  --unpaid:#3a2a10; --unpaid-text:#e0a94d; --warn:#3a1616; --warn-text:#ff8a8a;
+  --wait:#232733; --wait-text:#9aa3b2;
+  --err-border:#ff6b64;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+html,body{height:100%;}
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:"Sarabun","Segoe UI",system-ui,-apple-system,sans-serif;
+  padding:16px; padding-top:calc(16px + env(safe-area-inset-top,0px));
+  padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));
+}
+.wrap{max-width:1100px;margin:0 auto;}
+h1{font-size:1.3rem;text-align:center;margin:0 0 16px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.month-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;}
+.month-field{flex:1;min-width:180px;}
+.month-field label{display:block;font-size:.85rem;color:var(--sub);margin-bottom:4px;}
+.prev-hint{font-size:.82rem;color:var(--sub);padding:9px 2px;}
+select,input[type=text]{
+  width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;
+  background:var(--card);color:var(--text);font-size:.95rem;font-family:inherit;
+}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:10px;}
+table{border-collapse:collapse;width:100%;min-width:920px;font-size:.85rem;}
+th,td{border:1px solid var(--border);padding:6px 8px;text-align:center;white-space:nowrap;}
+thead th{background:var(--head);font-weight:600;position:sticky;top:0;z-index:2;}
+.sub-th{font-weight:400;font-size:.75rem;color:var(--sub);}
+tbody td.name-col, thead th.name-col{
+  position:sticky;left:36px;background:var(--card);z-index:1;text-align:left;white-space:normal;min-width:150px;
+}
+thead th.name-col{background:var(--head);z-index:3;}
+tbody td.idx-col, thead th.idx-col{
+  position:sticky;left:0;background:var(--card);z-index:1;min-width:36px;
+}
+thead th.idx-col{background:var(--head);z-index:3;}
+td input[type=text].meter-input{min-width:66px;padding:8px 4px;font-size:1.05rem;text-align:center;letter-spacing:1px;font-variant-numeric:tabular-nums;}
+td input[type=text].note-input{min-width:110px;padding:8px 6px;font-size:.85rem;}
+input.input-error{border-color:var(--err-border);border-width:2px;background:var(--warn);}
+input:disabled{opacity:.6;}
+.paid-cell{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px;}
+.paid-cell input[type=checkbox]{width:26px;height:26px;cursor:pointer;}
+.paid-cell input[type=checkbox]:disabled{cursor:not-allowed;opacity:.5;}
+.paid-cell .paid-label{font-size:.7rem;color:var(--sub);white-space:nowrap;}
+.paid-cell .paid-label.wait-label{color:var(--wait-text);}
+tr.paid-row td{background:var(--paid);}
+tr.unpaid-row td{background:var(--unpaid);}
+tr.wait-row td{background:var(--wait);}
+tr.warn-row td{background:var(--warn);}
+tr.warn-row td.total-cell{color:var(--warn-text);font-weight:700;}
+.warn-banner{color:var(--warn-text);font-size:.72rem;font-weight:600;}
+.wait-banner{color:var(--wait-text);font-size:.72rem;}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+.sum-item{background:var(--head);border-radius:10px;padding:10px 12px;}
+.sum-item .label{font-size:.78rem;color:var(--sub);}
+.sum-item .value{font-size:1.15rem;font-weight:700;margin-top:2px;}
+.sum-item.warn-item .value{color:var(--warn-text);}
+.sum-note{font-size:.75rem;color:var(--sub);margin-top:10px;}
+.btn-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px;}
+button{
+  background:var(--primary);color:#fff;border:none;border-radius:8px;
+  padding:10px 16px;font-size:.9rem;cursor:pointer;font-family:inherit;font-weight:600;
+}
+button:hover{background:var(--primary-dark);}
+button.secondary{background:var(--card);color:var(--text);border:1px solid var(--border);}
+button:disabled{opacity:.6;cursor:not-allowed;}
+.save-note{font-size:.8rem;color:var(--sub);text-align:center;margin-top:8px;min-height:1.2em;}
+.conn-badge{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;padding:4px 10px;border-radius:999px;background:var(--head);color:var(--sub);margin-bottom:10px;}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:#9aa3b2;}
+.conn-badge.online .conn-dot{background:#2fae5d;}
+.conn-badge.offline .conn-dot{background:#c0392b;}
+.conn-badge.syncing .conn-dot{background:#e0a94d;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>💧 โปรแกรมคำนวณค่าน้ำประจำเดือน</h1>
+  <div style="text-align:center;"><span class="conn-badge" id="connBadge"><span class="conn-dot"></span><span id="connText">กำลังเชื่อมต่อ Supabase...</span></span></div>
+
+  <div class="card">
+    <div class="month-row">
+      <div class="month-field">
+        <label>เดือนปัจจุบัน</label>
+        <select id="currMonth"></select>
+      </div>
+      <div class="month-field">
+        <label>เดือนก่อนหน้า (กำหนดอัตโนมัติ)</label>
+        <div class="prev-hint" id="prevHint">-</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th class="idx-col" rowspan="2">ลำดับ</th>
+            <th class="name-col" rowspan="2">ชื่อ-นามสกุล</th>
+            <th>มิเตอร์ครั้งก่อน</th>
+            <th>มิเตอร์ครั้งหลัง</th>
+            <th rowspan="2">จำนวนที่ใช้<br><span class="sub-th">(หน่วย)</span></th>
+            <th rowspan="2">ค่าน้ำ<br><span class="sub-th">7 บาท/หน่วย</span></th>
+            <th rowspan="2">ค่าบำรุงมิเตอร์<br><span class="sub-th">10 บาท/คน/เดือน</span></th>
+            <th rowspan="2">ยอดรวม<br><span class="sub-th">(บาท)</span></th>
+            <th rowspan="2">สถานะ</th>
+            <th rowspan="2">หมายเหตุ</th>
+          </tr>
+          <tr>
+            <th id="prevSub" class="sub-th"></th>
+            <th id="currSub" class="sub-th"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:1.05rem;margin-top:0;">📊 สรุปยอดประจำเดือน</h2>
+    <div class="summary" id="summary"></div>
+    <div class="sum-note">ยอดที่ต้องเก็บ = ค่าบำรุง 16 คน (160 บาท) + ค่าน้ำเฉพาะคนที่อ่านมิเตอร์ครบแล้ว</div>
+  </div>
+
+  <div class="btn-row">
+    <button id="saveBtn">💾 บันทึก</button>
+    <button class="secondary" id="carryBtn">↩️ ดึงมิเตอร์จากเดือนก่อนหน้า</button>
+    <button class="secondary" id="printBtn">🖨️ พิมพ์</button>
+  </div>
+  <div class="save-note" id="saveNote"></div>
+</div>
+
+<!-- Supabase JS client (โหลดจาก CDN ตามคำแนะนำอย่างเป็นทางการของ Supabase) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ============================================================
+   SUPABASE CONFIG — แก้ 2 ค่านี้เป็นของโปรเจกต์คุณก่อนใช้งานจริง
+   หาได้จาก Supabase Dashboard → Project Settings → API
+   ใช้ "anon / public" key เท่านั้น ห้ามใช้ "service_role" key
+   ============================================================ */
+const SUPABASE_URL = "https://taxsvcoicexclhkvpjcm.supabase.co"; // TODO: แก้เป็น Project URL ของคุณ
+const SUPABASE_ANON_KEY = "sb_publishable_2xsO8q9mM-_cQj2hTErTkw_fqvIEPsQ";              // TODO: แก้เป็น anon public key ของคุณ
+const TABLE = "water_bills";
+
+const supabaseClient = (SUPABASE_URL.indexOf("YOUR-PROJECT-REF")===-1)
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null; // ยังไม่ได้ตั้งค่า -> จะทำงานแบบออฟไลน์ด้วย LocalStorage เป็นสำรองเท่านั้น
+
+const NAMES = [
+"นางประไพ นามผา","นางเครื่อง บุตรตะนาม","นายกัมพล พรหมหาราช","นายวัชรินทร์ ศรีหนารถ",
+"นางหลอด ลัดทะจัก","นายสมศักดิ์ พันชา","นายวิเชียร พันเงิน","นางรอเยื้อน ศรีหนารถ",
+"นายประยุทธ์ ใสยัน","นางคำหลอ วรรณวิชิต","นางทองสิน ขุนน้อย","นายทองสอด แสนคำเพิงใจ",
+"นายบุญมาก นนทะลัย","นายสาคร อุทธรบุรณ์","นายคำดี มณีสอน","นายศักดิ์ณรงค์ เคหัง"
+];
+const THAI_MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+const RATE = 7, MAINT = 10;
+const STORAGE_KEY = "water_bill_cache_v1";      // LocalStorage = แคชสำรองเท่านั้น ไม่ใช่แหล่งข้อมูลหลักอีกต่อไป
+const LAST_MONTH_KEY = "water_bill_last_month_v1";
+
+function monthLabel(v){ const [y,m]=v.split("-").map(Number); return THAI_MONTHS[m-1]+" "+y; }
+function prevMonthValue(v){ let [y,m]=v.split("-").map(Number); m--; if(m<1){m=12;y--;} return y+"-"+m; }
+function defaultCurrentMonth(){
+  const now = new Date();
+  return (now.getFullYear()+543)+"-"+(now.getMonth()+1);
+}
+
+// ---------- LocalStorage: แคชสำรอง (offline fallback) เท่านั้น ----------
+function loadLocalCache(){
+  try{ const raw = localStorage.getItem(STORAGE_KEY); return raw?JSON.parse(raw):{}; }
+  catch(e){ return {}; }
+}
+function saveLocalCache(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(store)); }
+  catch(e){ /* เต็มหรือถูกปิดใช้งาน - ไม่ critical เพราะ Supabase เป็นแหล่งข้อมูลหลัก */ }
+}
+
+// store: แคชในหน่วยความจำของแต่ละเดือนที่โหลดมาแล้ว { "2569-9": {rows:[...]}, ... }
+let store = {};
+
+function emptyMonthData(){
+  return { rows: NAMES.map(()=>({prev:"",curr:"",note:"",paid:false})) };
+}
+// อ่านข้อมูลเดือนแบบ sync (ต้องเรียก loadMonthIntoStore(v) ให้เสร็จก่อนหน้านี้แล้ว)
+function getMonthData(v){
+  if(!store[v]) store[v] = emptyMonthData();
+  return store[v];
+}
+
+// ---------- Supabase I/O ----------
+function setConnBadge(kind, text){
+  const badge = document.getElementById("connBadge");
+  badge.className = "conn-badge " + kind;
+  document.getElementById("connText").textContent = text;
+}
+
+async function fetchMonthFromSupabase(monthVal){
+  const { data, error } = await supabaseClient
+    .from(TABLE)
+    .select("*")
+    .eq("month", monthVal);
+  if(error) throw error;
+  const rows = NAMES.map(()=>({prev:"",curr:"",note:"",paid:false}));
+  (data||[]).forEach(r=>{
+    const idx = Number(r.person_id) - 1;
+    if(idx>=0 && idx<16){
+      rows[idx] = {
+        prev: r.prev_meter!=null ? String(r.prev_meter) : "",
+        curr: r.curr_meter!=null ? String(r.curr_meter) : "",
+        note: r.note || "",
+        paid: !!r.paid
+      };
+    }
+  });
+  return { rows };
+}
+
+// โหลดข้อมูลเดือน monthVal เข้า store ถ้ายังไม่เคยโหลด (ใช้แคชในหน่วยความจำถ้ามีแล้ว)
+async function loadMonthIntoStore(monthVal, force){
+  if(store[monthVal] && !force) return store[monthVal];
+  if(!supabaseClient){
+    const cache = loadLocalCache();
+    store[monthVal] = cache[monthVal] || emptyMonthData();
+    setConnBadge("offline", "ยังไม่ได้ตั้งค่า Supabase (ใช้ข้อมูลสำรองในเครื่องนี้)");
+    return store[monthVal];
+  }
+  try{
+    setConnBadge("syncing", "กำลังโหลดข้อมูล...");
+    const monthData = await fetchMonthFromSupabase(monthVal);
+    store[monthVal] = monthData;
+    saveLocalCache();
+    setConnBadge("online", "เชื่อมต่อ Supabase แล้ว");
+    return store[monthVal];
+  }catch(err){
+    console.error("โหลดจาก Supabase ไม่สำเร็จ ใช้ข้อมูลสำรองในเครื่องนี้แทน", err);
+    const cache = loadLocalCache();
+    store[monthVal] = cache[monthVal] || emptyMonthData();
+    setConnBadge("offline", "ออฟไลน์ - ใช้ข้อมูลสำรองในเครื่องนี้");
+    return store[monthVal];
+  }
+}
+
+// upsert ข้อมูลของคนคนเดียวในเดือนเดียว โดยอ้างอิง (month, person_id) กันข้อมูลซ้ำ
+async function upsertPersonToSupabase(monthVal, personId, row){
+  if(!supabaseClient) return false;
+  const payload = {
+    month: monthVal,
+    person_id: personId,
+    prev_meter: row.prev,
+    curr_meter: row.curr,
+    note: row.note,
+    paid: row.paid,
+    updated_at: new Date().toISOString()
+  };
+  const { error } = await supabaseClient
+    .from(TABLE)
+    .upsert(payload, { onConflict: "month,person_id" });
+  if(error){ console.error("upsert ไม่สำเร็จ", error); return false; }
+  return true;
+}
+
+// debounce ต่อแถว: พิมพ์ต่อเนื่องจะยิง upsert ครั้งเดียวหลังหยุดพิมพ์ ลดจำนวน request
+const syncTimers = {};
+function scheduleSync(i, immediate){
+  clearTimeout(syncTimers[i]);
+  const run = async ()=>{
+    const monthVal = currVal;
+    const row = getMonthData(monthVal).rows[i];
+    setConnBadge("syncing", "กำลังซิงก์...");
+    const ok = await upsertPersonToSupabase(monthVal, i+1, row);
+    if(ok){
+      setConnBadge("online", "ซิงก์กับ Supabase แล้ว");
+      showSyncedNote();
+    } else if(supabaseClient) {
+      setConnBadge("offline", "ซิงก์ไม่สำเร็จ - บันทึกไว้ในเครื่องนี้ก่อน");
+    }
+  };
+  if(immediate) run(); else syncTimers[i] = setTimeout(run, 500);
+}
+
+// ---------- Realtime: ให้ทุกเครื่องเห็นข้อมูลเดียวกันโดยไม่ต้อง refresh ----------
+let realtimeChannel = null;
+function subscribeRealtime(monthVal){
+  if(!supabaseClient) return;
+  if(realtimeChannel){ supabaseClient.removeChannel(realtimeChannel); realtimeChannel = null; }
+  realtimeChannel = supabaseClient
+    .channel("water_bills_"+monthVal)
+    .on("postgres_changes",
+      { event: "*", schema: "public", table: TABLE, filter: `month=eq.${monthVal}` },
+      (payload)=>{ handleRealtimeChange(payload, monthVal); }
+    )
+    .subscribe();
+}
+
+function handleRealtimeChange(payload, monthVal){
+  if(monthVal !== currVal) return; // เดือนถูกเปลี่ยนไปแล้วก่อนอีเวนต์มาถึง
+  const rec = payload.new && Object.keys(payload.new).length ? payload.new : payload.old;
+  if(!rec) return;
+  const idx = Number(rec.person_id) - 1;
+  if(idx<0 || idx>=16) return;
+
+  const data = getMonthData(currVal);
+  if(payload.eventType === "DELETE"){
+    data.rows[idx] = {prev:"",curr:"",note:"",paid:false};
+  } else {
+    data.rows[idx] = {
+      prev: rec.prev_meter!=null ? String(rec.prev_meter) : "",
+      curr: rec.curr_meter!=null ? String(rec.curr_meter) : "",
+      note: rec.note || "",
+      paid: !!rec.paid
+    };
+  }
+  saveLocalCache();
+  updateRowCells(idx); // อัปเดตเฉพาะแถวนั้น + Summary ไม่สร้างตารางใหม่ทั้งหมด, ไม่แย่ง focus (เช็คในฟังก์ชัน)
+  renderSummary();
+}
+
+function buildMonthOptions(sel, selected){
+  sel.innerHTML="";
+  const nowBE = new Date().getFullYear()+543;
+  const years=[];
+  for(let y=nowBE-3; y<=nowBE+7; y++) years.push(y);
+  years.forEach(y=>{
+    for(let m=1;m<=12;m++){
+      const val = y+"-"+m;
+      const opt=document.createElement("option");
+      opt.value=val; opt.textContent=monthLabel(val);
+      if(val===selected) opt.selected=true;
+      sel.appendChild(opt);
+    }
+  });
+}
+
+const currSel = document.getElementById("currMonth");
+let currVal = null;
+try{ currVal = localStorage.getItem(LAST_MONTH_KEY); }catch(e){}
+if(!currVal) currVal = defaultCurrentMonth();
+let prevVal = prevMonthValue(currVal);
+buildMonthOptions(currSel, currVal);
+
+function renderHeaders(){
+  prevVal = prevMonthValue(currVal);
+  document.getElementById("prevSub").textContent = monthLabel(prevVal);
+  document.getElementById("currSub").textContent = monthLabel(currVal);
+  document.getElementById("prevHint").textContent = monthLabel(prevVal);
+}
+
+function digitsOnly(s){ return (s||"").replace(/[^0-9]/g,"").slice(0,4); }
+
+// r.units/water/total: null if not computable. r.warn: curr < prev (meter หลัง < ก่อน).
+// เลขมิเตอร์ต้องครบ 4 หลักก่อนคำนวณเสมอ (เก็บเป็น string จึงรักษาเลข 0 นำหน้าไว้ได้)
+function calcRow(row){
+  const prevOk = row.prev!=="" && row.prev!=null && row.prev.length===4;
+  const currOk = row.curr!=="" && row.curr!=null && row.curr.length===4;
+  if(!prevOk || !currOk){
+    return {units:null, water:null, total:null, warn:false};
+  }
+  const p = Number(row.prev), c = Number(row.curr);
+  if(c < p){
+    return {units:null, water:null, total:null, warn:true};
+  }
+  const units = c - p;
+  const water = units * RATE;
+  const total = water + MAINT;
+  return {units, water, total, warn:false};
+}
+
+// Classifies a row into exactly one bucket - used by BOTH the table status label
+// and the summary counters, so the two can never disagree with each other.
+function meterState(row, r){
+  if(r.warn) return "invalid";
+  if(r.total==null){
+    const hasPartial = (row.prev!=="" && row.prev.length!==4) || (row.curr!=="" && row.curr.length!==4);
+    return hasPartial ? "incomplete" : "waiting";
+  }
+  return "ok";
+}
+
+// Determine checkbox/status state for a row given its calc result.
+function rowStatus(row, r){
+  const state = meterState(row, r);
+  if(state==="invalid") return {disabled:true, label:"⚠️ ตรวจสอบมิเตอร์", kind:"warn"};
+  if(state==="incomplete") return {disabled:true, label:"⚠️ ข้อมูลไม่สมบูรณ์ (ต้องครบ 4 หลัก)", kind:"wait"};
+  if(state==="waiting") return {disabled:true, label:"⏳ รออ่านมิเตอร์", kind:"wait"};
+  return {disabled:false, label: row.paid ? "☑ เก็บแล้ว" : "☐ ยังไม่ได้เก็บ", kind: row.paid?"paid":"unpaid"};
+}
+
+async function buildTableSkeleton(){
+  renderHeaders();
+  await loadMonthIntoStore(currVal);
+  const data = getMonthData(currVal);
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+  let resetIdxs = [];
+  data.rows.forEach((row, i)=>{
+    // A row that can no longer be paid (incomplete/invalid) must not stay checked.
+    const r0 = calcRow(row);
+    if(r0.total==null && row.paid){ row.paid = false; resetIdxs.push(i); }
+
+    const tr = document.createElement("tr");
+    tr.id = "row-"+i;
+    tr.innerHTML = `
+      <td class="idx-col">${i+1}</td>
+      <td class="name-col">${NAMES[i]}</td>
+      <td><input type="text" class="meter-input" inputmode="numeric" pattern="[0-9]*" maxlength="4" data-i="${i}" data-f="prev" value="${row.prev}" placeholder="—"></td>
+      <td><input type="text" class="meter-input" inputmode="numeric" pattern="[0-9]*" maxlength="4" data-i="${i}" data-f="curr" value="${row.curr}" placeholder="—"></td>
+      <td class="units-cell"></td>
+      <td class="water-cell"></td>
+      <td>${MAINT}</td>
+      <td class="total-cell"></td>
+      <td>
+        <label class="paid-cell">
+          <input type="checkbox" data-i="${i}" data-f="paid">
+          <span class="paid-label"></span>
+        </label>
+      </td>
+      <td class="note-cell"></td>
+    `;
+    // ช่องหมายเหตุ: สร้างด้วย DOM API แล้วกำหนดผ่าน .value เพื่อไม่ให้ข้อความที่ผู้ใช้กรอก
+    // ถูกตีความเป็น HTML (ป้องกัน injection) — ไม่ใช้ innerHTML สำหรับข้อมูลนี้
+    const noteInput = document.createElement("input");
+    noteInput.type = "text";
+    noteInput.className = "note-input";
+    noteInput.dataset.i = String(i);
+    noteInput.dataset.f = "note";
+    noteInput.placeholder = "เช่น จ่ายแล้ว, ค้าง";
+    noteInput.value = row.note;
+    tr.querySelector(".note-cell").appendChild(noteInput);
+
+    tbody.appendChild(tr);
+  });
+  // มีแถวที่ถูกยกเลิกสถานะ "เก็บแล้ว" ระหว่างสร้างตาราง -> บันทึกลง LocalStorage และ Supabase ทันที
+  // เพื่อไม่ให้ค่า paid:true ค้างอยู่ในข้อมูลที่เก็บไว้ทั้งที่คำนวณยอดไม่ได้แล้ว
+  if(resetIdxs.length){
+    saveLocalCache();
+    resetIdxs.forEach(i=> scheduleSync(i, true));
+  }
+
+  tbody.querySelectorAll("input.meter-input").forEach(inp=>{
+    inp.addEventListener("input", (e)=>{
+      const cleaned = digitsOnly(e.target.value);
+      if(e.target.value !== cleaned) e.target.value = cleaned;
+      onFieldChange(e);
+    });
+  });
+  tbody.querySelectorAll("input.note-input").forEach(inp=>{
+    inp.addEventListener("input", onFieldChange);
+  });
+  tbody.querySelectorAll("input[type=checkbox]").forEach(inp=>{
+    inp.addEventListener("change", onFieldChange);
+  });
+
+  for(let i=0;i<data.rows.length;i++) updateRowCells(i);
+  renderSummary();
+}
+
+// Update only the derived cells/classes of one row - no DOM rebuild, keeps input focus intact.
+// เรียกได้ทั้งจากการพิมพ์ในเครื่องนี้ และจากอีเวนต์ Realtime ที่มาจากเครื่องอื่น
+function updateRowCells(i){
+  const data = getMonthData(currVal);
+  const row = data.rows[i];
+  const r = calcRow(row);
+  if(r.total==null && row.paid){
+    row.paid = false;
+    saveLocalCache();
+    scheduleSync(i, true);
+  }
+  const st = rowStatus(row, r);
+
+  const tr = document.getElementById("row-"+i);
+  if(!tr) return;
+
+  tr.classList.remove("paid-row","unpaid-row","wait-row","warn-row");
+  tr.classList.add(st.kind==="paid" ? "paid-row" : st.kind==="unpaid" ? "unpaid-row" : st.kind==="wait" ? "wait-row" : "warn-row");
+
+  tr.querySelector(".units-cell").innerHTML = r.warn ? "⚠️" : (r.units==null ? "—" : r.units);
+  tr.querySelector(".water-cell").innerHTML = r.warn ? '<span class="warn-banner">ตรวจสอบมิเตอร์</span>' : (r.water==null ? (r.total===null && !r.warn ? '<span class="wait-banner">รออ่านมิเตอร์</span>' : "—") : r.water);
+  tr.querySelector(".total-cell").innerHTML = r.warn ? '<span class="warn-banner">⚠️ หลัง&lt;ก่อน</span>' : (r.total==null ? "—" : r.total);
+
+  const prevInput = tr.querySelector('[data-f="prev"]');
+  const currInput = tr.querySelector('[data-f="curr"]');
+  prevInput.classList.toggle("input-error", !!r.warn);
+  currInput.classList.toggle("input-error", !!r.warn);
+  // sync ค่าจาก state ลงในช่องกรอก แต่ไม่แตะช่องที่ผู้ใช้กำลังโฟกัส/พิมพ์อยู่ (กันข้อมูล Realtime ทับสิ่งที่กำลังพิมพ์)
+  if(document.activeElement !== prevInput && prevInput.value !== row.prev) prevInput.value = row.prev;
+  if(document.activeElement !== currInput && currInput.value !== row.curr) currInput.value = row.curr;
+  const noteInput = tr.querySelector('[data-f="note"]');
+  if(noteInput && document.activeElement !== noteInput && noteInput.value !== row.note) noteInput.value = row.note;
+
+  const chk = tr.querySelector('input[type=checkbox]');
+  chk.checked = row.paid;
+  chk.disabled = st.disabled;
+  const lbl = tr.querySelector(".paid-label");
+  lbl.textContent = st.label;
+  lbl.classList.toggle("wait-label", st.kind==="wait" || st.kind==="warn");
+}
+
+let saveTimer = null;
+function onFieldChange(e){
+  const i = Number(e.target.dataset.i);
+  const f = e.target.dataset.f;
+  const data = getMonthData(currVal);
+  if(f==="paid") data.rows[i].paid = e.target.checked;
+  else if(f==="note") data.rows[i].note = e.target.value;
+  else data.rows[i][f] = e.target.value;
+  saveLocalCache();
+  showAutoSaved();
+  updateRowCells(i);
+  renderSummary();
+  scheduleSync(i, f==="paid"); // checkbox sync ทันที, ช่องพิมพ์ debounce
+}
+
+function showAutoSaved(){
+  const note = document.getElementById("saveNote");
+  const t = new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});
+  note.textContent = "✓ บันทึกอัตโนมัติแล้ว • ล่าสุด "+t+" น.";
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{ note.textContent=""; }, 4000);
+}
+function showSyncedNote(){
+  const note = document.getElementById("saveNote");
+  const t = new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});
+  note.textContent = "☁️ ซิงก์กับฐานข้อมูลกลางแล้ว • "+t+" น.";
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{ note.textContent=""; }, 3000);
+}
+
+function renderSummary(){
+  const data = getMonthData(currVal);
+  let totalUnits=0, totalWaterCalculated=0, paidCount=0, paidAmount=0, waitingCount=0, incompleteCount=0, invalidCount=0;
+  data.rows.forEach(row=>{
+    const r = calcRow(row);
+    if(r.total!=null){
+      totalUnits += r.units;
+      totalWaterCalculated += r.water;
+      if(row.paid){ paidCount++; paidAmount += r.total; }
+    } else {
+      const state = meterState(row, r);
+      if(state==="invalid") invalidCount++;          // มิเตอร์ครั้งหลัง < ครั้งก่อน
+      else if(state==="incomplete") incompleteCount++; // กรอกแล้วแต่ยังไม่ครบ 4 หลัก
+      else waitingCount++;                             // ยังไม่ได้กรอกมิเตอร์เลย
+    }
+  });
+  const maintTotal = 16 * MAINT;
+  const totalDue = maintTotal + totalWaterCalculated; // ค่าบำรุงของทุกคนนับเสมอ + ค่าน้ำเฉพาะคนที่อ่านมิเตอร์ครบ
+  const outstandingRaw = totalDue - paidAmount;
+  const outstanding = Math.max(0, outstandingRaw);
+  const overpaid = outstandingRaw < 0 ? Math.abs(outstandingRaw) : 0;
+  const items = [
+    ["👥 ผู้ใช้น้ำทั้งหมด", "16 คน", false],
+    ["⏳ รออ่านมิเตอร์", waitingCount+" คน", false],
+    ["⚠️ ข้อมูลไม่ครบ", incompleteCount+" คน", incompleteCount>0],
+    ["⚠️ มิเตอร์ผิดปกติ", invalidCount+" คน", invalidCount>0],
+    ["💧 จำนวนหน่วยที่ใช้รวม", totalUnits+" หน่วย", false],
+    ["💰 ค่าน้ำรวม (เฉพาะที่อ่านมิเตอร์แล้ว)", totalWaterCalculated.toLocaleString()+" บาท", false],
+    ["🔧 ค่าบำรุงรักษารวม (16 คน)", maintTotal.toLocaleString()+" บาท", false],
+    ["💵 ยอดเงินที่ต้องเก็บ", totalDue.toLocaleString()+" บาท", false],
+    ["✅ เก็บเงินแล้ว", paidCount+" คน", false],
+    ["💰 ยอดเงินที่เก็บแล้ว", paidAmount.toLocaleString()+" บาท", false],
+    ["⏳ ยอดเงินค้างเก็บ", outstanding.toLocaleString()+" บาท", false],
+  ];
+  if(overpaid>0){
+    items.push(["⚠️ ยอดเกินที่ต้องเก็บ", overpaid.toLocaleString()+" บาท (ตรวจสอบข้อมูล)", true]);
+  }
+  const box = document.getElementById("summary");
+  box.innerHTML = items.map(([l,v,w])=>`<div class="sum-item${w?' warn-item':''}"><div class="label">${l}</div><div class="value">${v}</div></div>`).join("");
+}
+
+async function carryOverFromPrev(){
+  await loadMonthIntoStore(prevVal);
+  const prevData = store[prevVal];
+  const currData = getMonthData(currVal);
+  if(!prevData) return {did:false, idxs:[]};
+  const idxs=[];
+  currData.rows.forEach((row,i)=>{
+    if((row.prev==="" || row.prev==null) && prevData.rows[i] && prevData.rows[i].curr!==""){
+      row.prev = prevData.rows[i].curr; // รักษาเลข 0 นำหน้าไว้ (เก็บเป็น string)
+      idxs.push(i);
+    }
+  });
+  if(idxs.length){
+    saveLocalCache();
+    idxs.forEach(i=> scheduleSync(i, true));
+  }
+  return {did: idxs.length>0, idxs};
+}
+
+currSel.addEventListener("change", async ()=>{
+  currVal = currSel.value;
+  try{ localStorage.setItem(LAST_MONTH_KEY, currVal); }catch(e){}
+  await carryOverFromPrev();
+  await buildTableSkeleton();
+  subscribeRealtime(currVal);
+});
+
+document.getElementById("saveBtn").addEventListener("click", ()=>{
+  saveLocalCache();
+  const data = getMonthData(currVal);
+  data.rows.forEach((row,i)=> scheduleSync(i, true));
+  const note = document.getElementById("saveNote");
+  const t = new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});
+  note.textContent = "✅ บันทึกข้อมูลแล้ว • "+t+" น.";
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{ note.textContent=""; }, 2500);
+});
+document.getElementById("carryBtn").addEventListener("click", async ()=>{
+  const { did } = await carryOverFromPrev();
+  await buildTableSkeleton();
+  const note = document.getElementById("saveNote");
+  note.textContent = did ? "✅ ดึงเลขมิเตอร์ครั้งก่อนมาเรียบร้อย" : "ℹ️ ไม่พบข้อมูลมิเตอร์ในเดือนก่อนหน้า หรือมีข้อมูลครบแล้ว";
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{ note.textContent=""; }, 2500);
+});
+document.getElementById("printBtn").addEventListener("click", ()=> window.print());
+
+(async function init(){
+  try{ localStorage.setItem(LAST_MONTH_KEY, currVal); }catch(e){}
+  if(!supabaseClient) setConnBadge("offline", "ยังไม่ได้ตั้งค่า Supabase (ดูคอมเมนต์ SUPABASE_URL/ANON_KEY ในโค้ด)");
+  await carryOverFromPrev();
+  await buildTableSkeleton();
+  subscribeRealtime(currVal);
+})();
+</script>
+</body>
+</html>
