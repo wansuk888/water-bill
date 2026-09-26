@@ -109,113 +109,50 @@ button:disabled{opacity:.6;cursor:not-allowed;}
    ============================================================ */
 .print-form{display:none;}
 
-@media print{
-  @page{
-    size:A4 landscape;
-    margin:8mm 7mm 8mm 7mm;
-  }
-
-  html,body{
-    width:100%;
-    height:auto;
-    margin:0 !important;
-    padding:0 !important;
-    background:#fff !important;
-    color:#000 !important;
-    font-family:"TH Sarabun New","Sarabun",Arial,sans-serif !important;
-    -webkit-print-color-adjust:exact;
-    print-color-adjust:exact;
-  }
-
-  body > .wrap{display:none !important;}
-  .print-form{
-    display:block !important;
-    width:100%;
-    color:#000 !important;
-    background:#fff !important;
-    font-family:"TH Sarabun New","Sarabun",Arial,sans-serif !important;
-  }
-
-  .print-title{
-    font-size:18px;
-    font-weight:700;
-    text-align:left;
-    margin:0 0 4mm 0;
-  }
-
-  .print-subtitle{
-    font-size:15px;
-    margin:0 0 3mm 0;
-  }
-
-  .print-table{
-    width:100%;
-    border-collapse:collapse;
-    table-layout:fixed;
-    font-size:12px;
-  }
-
-  .print-table th,
-  .print-table td{
-    border:1px solid #000 !important;
-    padding:2px 3px;
-    text-align:center;
-    vertical-align:middle;
-    color:#000 !important;
-    background:#fff !important;
-    line-height:1.05;
-  }
-
-  .print-table thead th{
-    font-weight:700;
-  }
-
-  .print-table .p-idx{width:5%;}
-  .print-table .p-name{width:19%; text-align:left;}
-  .print-table .p-meter{width:11%;}
-  .print-table .p-units{width:8%;}
-  .print-table .p-water{width:9%;}
-  .print-table .p-maint{width:10%;}
-  .print-table .p-total{width:9%;}
-  .print-table .p-note{width:18%; text-align:left;}
-
-  .print-table tbody tr{
-    height:7.8mm;
-    page-break-inside:avoid;
-  }
-
-  .print-summary{
-    margin-top:4mm;
-    border:1px solid #000;
-    padding:2.5mm 4mm;
-    font-size:13px;
-  }
-
-  .print-summary-grid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:3mm 6mm;
-  }
-
-  .print-summary-item{
-    display:flex;
-    justify-content:space-between;
-    gap:4mm;
-    border-bottom:1px dotted #777;
-    padding-bottom:1mm;
-  }
-
-  .print-sign{
-    margin-top:7mm;
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:25mm;
-    font-size:13px;
-  }
-
-  .print-sign-box{
-    text-align:center;
-    padding-top:8mm;
+  @media print{
+    @page{
+      size:A4 landscape;
+      margin:5mm 6mm 5mm 6mm;
+    }
+    html,body{
+      width:100%; height:auto; margin:0 !important; padding:0 !important;
+      background:#fff !important; color:#000 !important;
+      font-family:"TH Sarabun New","Sarabun",Arial,sans-serif !important;
+      -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    }
+    body > .wrap{display:none !important;}
+    .print-form{
+      display:block !important; width:100%; color:#000 !important;
+      background:#fff !important;
+      font-family:"TH Sarabun New","Sarabun",Arial,sans-serif !important;
+    }
+    .print-title{
+      font-size:16px; font-weight:700; text-align:left;
+      margin:0 0 2mm 0; line-height:1.05;
+    }
+    .print-subtitle,.print-summary,.print-sign{display:none !important;}
+    .print-table{
+      width:100%; border-collapse:collapse; border-spacing:0;
+      table-layout:fixed; font-size:12px; margin:0;
+    }
+    .print-table th,.print-table td{
+      border:1px solid #000 !important; padding:1px 2px;
+      text-align:center; vertical-align:middle;
+      color:#000 !important; background:#fff !important;
+      line-height:1; height:6.1mm;
+    }
+    .print-table thead th{font-weight:700; height:7mm;}
+    .print-table thead tr:nth-child(2) th{height:6mm; font-weight:400;}
+    .print-table .p-idx{width:4.5%;}
+    .print-table .p-name{width:22%; text-align:left;}
+    .print-table .p-meter{width:11%;}
+    .print-table .p-units{width:9%;}
+    .print-table .p-water{width:10%;}
+    .print-table .p-maint{width:10%;}
+    .print-table .p-total{width:10%;}
+    .print-table .p-note{width:13.5%; text-align:left;}
+    .print-table th.p-idx,.print-table th.p-name{vertical-align:middle;}
+    .print-table tbody tr{height:6.1mm; page-break-inside:avoid;}
   }
 }
 
@@ -285,43 +222,31 @@ button:disabled{opacity:.6;cursor:not-allowed;}
        PRINT FORM — สร้างตามแบบฟอร์มหลักเมื่อกดพิมพ์
        ============================================================ -->
   <section id="printForm" class="print-form" aria-hidden="true">
-    <div class="print-title" id="printTitle">5. ตัวเลขมิเตอร์น้ำประปาประจำเดือน ................................ พ.ศ. ................</div>
-    <div class="print-subtitle" id="printSubtitle"></div>
-
+    <div class="print-title" id="printTitle">ตัวเลขมิเตอร์น้ำประปาประจำเดือน ................................ พ.ศ. ................</div>
     <table class="print-table">
       <thead>
         <tr>
           <th class="p-idx" rowspan="2">ลำดับ</th>
-          <th class="p-name" rowspan="2">ชื่อ-นามสกุล</th>
-          <th class="p-meter" colspan="1">มิเตอร์ครั้งก่อน</th>
-          <th class="p-meter" colspan="1">มิเตอร์ครั้งหลัง</th>
-          <th class="p-units" rowspan="2">จำนวนที่ใช้<br>(หน่วย)</th>
-          <th class="p-water" rowspan="2">ค่าน้ำ<br>(หน่วยละ 7 บาท)</th>
-          <th class="p-maint" rowspan="2">ค่าบำรุงรักษา<br>(บาท)</th>
-          <th class="p-total" rowspan="2">ยอดรวม<br>(บาท)</th>
+          <th class="p-name" rowspan="2">ชื่อ</th>
+          <th class="p-meter">มิเตอร์ครั้งก่อน</th>
+          <th class="p-meter">มิเตอร์ครั้งหลัง</th>
+          <th class="p-units" rowspan="2">จำนวนที่ใช้</th>
+          <th class="p-water" rowspan="2">ค่าน้ำ</th>
+          <th class="p-maint" rowspan="2">มิเตอร์</th>
+          <th class="p-total" rowspan="2">ยอดรวม</th>
           <th class="p-note" rowspan="2">หมายเหตุ</th>
         </tr>
         <tr>
-          <th class="p-meter" id="printPrevHead">เดือนก่อนหน้า</th>
-          <th class="p-meter" id="printCurrHead">เดือนปัจจุบัน</th>
+          <th class="p-meter">วัน</th>
+          <th class="p-meter">วัน</th>
         </tr>
       </thead>
       <tbody id="printTbody"></tbody>
     </table>
-
-    <div class="print-summary">
-      <div class="print-summary-grid" id="printSummary"></div>
-    </div>
-
+    <div class="print-summary"><div class="print-summary-grid" id="printSummary"></div></div>
     <div class="print-sign">
-      <div class="print-sign-box">
-        ลงชื่อ ........................................................<br>
-        ผู้บันทึก
-      </div>
-      <div class="print-sign-box">
-        ลงชื่อ ........................................................<br>
-        ผู้ตรวจสอบ
-      </div>
+      <div class="print-sign-box">ลงชื่อ ........................................................<br>ผู้บันทึก</div>
+      <div class="print-sign-box">ลงชื่อ ........................................................<br>ผู้ตรวจสอบ</div>
     </div>
   </section>
 
@@ -815,65 +740,34 @@ function escapePrintText(value){
 
 function buildPrintForm(){
   const data = getMonthData(currVal);
-  const prevLabel = monthLabel(prevVal);
-  const currLabel = monthLabel(currVal);
 
   document.getElementById("printTitle").textContent =
-    "5. ตัวเลขมิเตอร์น้ำประปาประจำเดือน " + THAI_MONTHS[Number(currVal.split("-")[1])-1] +
+    "ตัวเลขมิเตอร์น้ำประปาประจำเดือน " +
+    THAI_MONTHS[Number(currVal.split("-")[1])-1] +
     " พ.ศ. " + currVal.split("-")[0];
-
-  document.getElementById("printSubtitle").textContent =
-    "เดือนก่อนหน้า: " + prevLabel + "    |    เดือนปัจจุบัน: " + currLabel;
-
-  document.getElementById("printPrevHead").textContent =
-    "มิเตอร์ครั้งก่อน\n" + prevLabel;
-  document.getElementById("printCurrHead").textContent =
-    "มิเตอร์ครั้งหลัง\n" + currLabel;
 
   const tbody = document.getElementById("printTbody");
   tbody.innerHTML = "";
 
-  let totalUnits = 0;
-  let totalWater = 0;
-  let totalDue = 0;
-
-  data.rows.forEach((row, i) => {
-    const r = calcRow(row);
-    const units = r.units == null ? "—" : r.units;
-    const water = r.water == null ? "—" : r.water;
-    const total = r.total == null ? "—" : r.total;
-
-    if(r.units != null) totalUnits += r.units;
-    if(r.water != null) totalWater += r.water;
-    if(r.total != null) totalDue += r.total;
+  // แบบฟอร์มกระดาษ: 16 รายชื่อ + ช่องว่างอีก 6 แถว
+  for(let i=0; i<22; i++){
+    const row = i < 16 ? data.rows[i] : {prev:"", curr:"", note:""};
+    const r = i < 16 ? calcRow(row) : {units:null, water:null, total:null};
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${i+1}</td>
-      <td class="p-name">${escapePrintText(NAMES[i])}</td>
-      <td>${escapePrintText(row.prev || "—")}</td>
-      <td>${escapePrintText(row.curr || "—")}</td>
-      <td>${units}</td>
-      <td>${water}</td>
-      <td>${MAINT}</td>
-      <td>${total}</td>
-      <td class="p-note">${escapePrintText(row.note || "")}</td>
+      <td>${i < 16 ? i+1 : ""}</td>
+      <td class="p-name">${i < 16 ? escapePrintText(NAMES[i]) : ""}</td>
+      <td>${i < 16 ? escapePrintText(row.prev || "") : ""}</td>
+      <td>${i < 16 ? escapePrintText(row.curr || "") : ""}</td>
+      <td>${i < 16 && r.units != null ? r.units : ""}</td>
+      <td>${i < 16 && r.water != null ? r.water : ""}</td>
+      <td>${i < 16 ? MAINT : ""}</td>
+      <td>${i < 16 && r.total != null ? r.total : ""}</td>
+      <td class="p-note">${i < 16 ? escapePrintText(row.note || "") : ""}</td>
     `;
     tbody.appendChild(tr);
-  });
-
-  const grandDue = (16 * MAINT) + totalWater;
-  const summaryItems = [
-    ["ผู้ใช้น้ำทั้งหมด", "16 คน"],
-    ["จำนวนหน่วยที่ใช้รวม", totalUnits.toLocaleString() + " หน่วย"],
-    ["ค่าน้ำรวม", totalWater.toLocaleString() + " บาท"],
-    ["ค่าบำรุงรักษา", (16 * MAINT).toLocaleString() + " บาท"],
-    ["ยอดเงินที่ต้องเก็บ", grandDue.toLocaleString() + " บาท"],
-  ];
-
-  document.getElementById("printSummary").innerHTML = summaryItems.map(([label, value]) =>
-    `<div class="print-summary-item"><span>${label}</span><strong>${value}</strong></div>`
-  ).join("");
+  }
 }
 
 document.getElementById("printBtn").addEventListener("click", ()=>{
