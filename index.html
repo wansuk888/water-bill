@@ -424,7 +424,9 @@ async function loadMonthIntoStore(monthVal, force){
     }
     return store[monthVal];
   }catch(err){
-    console.error("โหลดจาก Supabase ไม่สำเร็จ ใช้ข้อมูลสำรองในเครื่องนี้แทน", err);
+    console.error("โหลดจาก Supabase ไม่สำเร็จ ใช้ข้อมูลสำรองในเครื่องนี้แทน", {
+      code:err?.code, message:err?.message, details:err?.details, hint:err?.hint
+    });
     const cache = loadLocalCache();
     store[monthVal] = cache[monthVal] || emptyMonthData();
     setConnBadge("offline", "ออฟไลน์ - ใช้ข้อมูลสำรองในเครื่องนี้");
@@ -433,28 +435,45 @@ async function loadMonthIntoStore(monthVal, force){
 }
 
 // upsert ข้อมูลของคนคนเดียวในเดือนเดียว โดยอ้างอิง (month, person_id) กันข้อมูลซ้ำ
+let lastSupabaseError = null;
+
 async function upsertPersonToSupabase(monthVal, personId, row){
   if(!supabaseClient) return false;
+
   const payload = {
-    month: monthVal,
-    person_id: personId,
-    prev_meter: row.prev,
-    curr_meter: row.curr,
-    note: row.note,
-    paid: row.paid,
+    month: String(monthVal),
+    person_id: Number(personId),
+    prev_meter: row.prev ?? "",
+    curr_meter: row.curr ?? "",
+    note: row.note ?? "",
+    paid: !!row.paid,
     updated_at: new Date().toISOString()
   };
+
   try{
-    const { error } = await supabaseClient
+    // .select() ทำให้เราตรวจได้ทันทีว่า INSERT/UPDATE สำเร็จจริง
+    const { data, error } = await supabaseClient
       .from(TABLE)
-      .upsert(payload, { onConflict: "month,person_id" });
+      .upsert(payload, { onConflict: "month,person_id" })
+      .select("month,person_id,prev_meter,curr_meter,note,paid")
+      .single();
+
     if(error){
-      console.error("upsert ไม่สำเร็จ", error);
+      lastSupabaseError = error;
+      console.error("SUPABASE UPSERT ERROR:", {
+        code:error.code,
+        message:error.message,
+        details:error.details,
+        hint:error.hint
+      });
       return false;
     }
-    return true;
+
+    lastSupabaseError = null;
+    return !!data;
   }catch(err){
-    console.error("เชื่อมต่อเพื่อบันทึกไม่สำเร็จ", err);
+    lastSupabaseError = err;
+    console.error("SUPABASE CONNECTION ERROR:", err);
     return false;
   }
 }
@@ -823,7 +842,10 @@ document.getElementById("saveBtn").addEventListener("click", async ()=>{
     if(failed){
       saveLocalCache();
       setConnBadge("offline", "บันทึกฐานข้อมูลไม่สำเร็จ - ข้อมูลยังอยู่ในเครื่องนี้");
-      note.textContent = "⚠️ บันทึกไม่ครบ กรุณาตรวจสอบการเชื่อมต่อ Supabase";
+      const errText = lastSupabaseError
+        ? ` (${lastSupabaseError.code || "ERR"}: ${lastSupabaseError.message || "unknown error"})`
+        : "";
+      note.textContent = "⚠️ บันทึกไม่ครบ" + errText;
     }else{
       // ตรวจซ้ำหลังบันทึก เพื่อไม่แสดงว่า "สำเร็จ" ทั้งที่ฐานข้อมูลยังไม่มีข้อมูล
       const verified = await fetchMonthFromSupabase(currVal);
