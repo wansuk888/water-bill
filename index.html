@@ -791,7 +791,10 @@ function renderSummary(){
 async function carryOverFromPrev(){
   await loadMonthIntoStore(prevVal);
   const prevData = store[prevVal];
-  const currData = getMonthData(currVal);
+  // สำคัญ: ต้อง "โหลด" ข้อมูลเดือนปัจจุบันจาก Supabase จริง ๆ ที่นี่ (ไม่ใช่แค่ getMonthData
+  // ซึ่งจะสร้างข้อมูลว่างทิ้งไว้ก่อน แล้วทำให้ loadMonthIntoStore() ใน buildTableSkeleton()
+  // เข้าใจผิดว่ามีข้อมูลอยู่แล้วและข้ามการดึงจาก Supabase ไปเลย — นี่คือสาเหตุที่ข้อมูลหายตอนรีเฟรช)
+  const currData = await loadMonthIntoStore(currVal);
   if(!prevData) return {did:false, idxs:[]};
   const idxs=[];
   currData.rows.forEach((row,i)=>{
