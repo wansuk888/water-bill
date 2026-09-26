@@ -112,101 +112,47 @@ button:disabled{opacity:.6;cursor:not-allowed;}
   @media print{
     @page{
       size:A4 landscape;
-      margin:5mm 5mm 5mm 5mm;
+      margin:5mm 6mm 5mm 6mm;
     }
-
     html,body{
-      width:100%;
-      height:auto;
-      margin:0 !important;
-      padding:0 !important;
-      background:#fff !important;
-      color:#000 !important;
+      width:100%; height:auto; margin:0 !important; padding:0 !important;
+      background:#fff !important; color:#000 !important;
       font-family:"TH Sarabun New","Sarabun",Arial,sans-serif !important;
-      -webkit-print-color-adjust:exact;
-      print-color-adjust:exact;
+      -webkit-print-color-adjust:exact; print-color-adjust:exact;
     }
-
     body > .wrap{display:none !important;}
-
     .print-form{
-      display:block !important;
-      width:100%;
-      color:#000 !important;
+      display:block !important; width:100%; color:#000 !important;
       background:#fff !important;
       font-family:"TH Sarabun New","Sarabun",Arial,sans-serif !important;
     }
-
     .print-title{
-      font-size:18px;
-      font-weight:700;
-      text-align:left;
-      margin:0 0 3mm 0;
-      line-height:1.1;
+      font-size:16px; font-weight:700; text-align:left;
+      margin:0 0 2mm 0; line-height:1.05;
     }
-
-    .print-subtitle,
-    .print-summary,
-    .print-sign{
-      display:none !important;
-    }
-
+    .print-subtitle,.print-summary,.print-sign{display:none !important;}
     .print-table{
-      width:100%;
-      max-width:100%;
-      border-collapse:collapse;
-      border-spacing:0;
-      table-layout:fixed;
-      margin:0;
-      font-size:15px;
+      width:100%; border-collapse:collapse; border-spacing:0;
+      table-layout:fixed; font-size:12px; margin:0;
     }
-
-    .print-table th,
-    .print-table td{
-      border:1px solid #000 !important;
-      padding:1.5px 3px;
-      text-align:center;
-      vertical-align:middle;
-      color:#000 !important;
-      background:#fff !important;
-      line-height:1.05;
-      overflow:hidden;
+    .print-table th,.print-table td{
+      border:1px solid #000 !important; padding:1px 2px;
+      text-align:center; vertical-align:middle;
+      color:#000 !important; background:#fff !important;
+      line-height:1; height:6.1mm;
     }
-
-    .print-table thead th{
-      font-weight:700;
-      height:10mm;
-    }
-
-    .print-table thead tr:nth-child(2) th{
-      height:8mm;
-      font-weight:400;
-    }
-
-    /* 9 columns — รวม 100% พอดี */
-    .print-table .p-idx{width:5%;}
-    .print-table .p-name{width:22%; text-align:center;}
+    .print-table thead th{font-weight:700; height:7mm;}
+    .print-table thead tr:nth-child(2) th{height:6mm; font-weight:400;}
+    .print-table .p-idx{width:4.5%;}
+    .print-table .p-name{width:22%; text-align:left;}
     .print-table .p-meter{width:11%;}
     .print-table .p-units{width:9%;}
     .print-table .p-water{width:10%;}
     .print-table .p-maint{width:10%;}
-    .print-table .p-total{width:9%;}
-    .print-table .p-note{width:13%; text-align:center;}
-
-    .print-table tbody tr{
-      height:7mm;
-      page-break-inside:avoid;
-    }
-
-    .print-table tbody td{
-      height:7mm;
-    }
-
-    .print-table th.p-idx,
-    .print-table th.p-name{
-      vertical-align:middle;
-      text-align:center;
-    }
+    .print-table .p-total{width:10%;}
+    .print-table .p-note{width:13.5%; text-align:left;}
+    .print-table th.p-idx,.print-table th.p-name{vertical-align:middle;}
+    .print-table tbody tr{height:6.1mm; page-break-inside:avoid;}
   }
 }
 
