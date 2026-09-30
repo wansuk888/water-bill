@@ -103,6 +103,17 @@ button:disabled{opacity:.6;cursor:not-allowed;}
 .conn-badge.offline .conn-dot{background:#c0392b;}
 .conn-badge.syncing .conn-dot{background:#e0a94d;}
 
+#loginView{max-width:520px;margin:0 auto;padding:8px;}
+.login-box{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:20px;}
+.login-box h1{font-size:1.8rem;}
+.login-box label{display:block;font-size:1.4rem;font-weight:700;margin:16px 0 6px;}
+.login-box select,.login-box input{width:100%;font-size:1.6rem;padding:14px;border:2px solid var(--text);border-radius:10px;background:var(--card);color:var(--text);font-family:inherit;}
+.login-box .who{font-size:1.7rem;font-weight:700;text-align:center;margin:8px 0;}
+.login-box .bigtxt{font-size:1.4rem;}
+button.big{width:100%;font-size:1.5rem;padding:16px;margin-top:16px;}
+.login-msg{font-size:1.3rem;font-weight:700;color:var(--warn-text);background:var(--warn);border-radius:10px;margin-top:14px;}
+.login-msg:not(:empty){padding:12px;}
+#userBar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;font-size:1.15rem;}
 /* ============================================================
    PRINT FORM — รูปแบบพิมพ์ตามแบบฟอร์มหลัก
    แสดงเฉพาะตอนสั่งพิมพ์ ไม่กระทบหน้าจอใช้งานปกติ
@@ -217,7 +228,40 @@ button:disabled{opacity:.6;cursor:not-allowed;}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div id="loginView" style="display:none">
+ <div class="login-box">
+  <h1>💧 ระบบคำนวณค่าน้ำ</h1>
+  <div id="stepPick">
+   <label for="cmtSel">เลือกกรรมการ</label>
+   <select id="cmtSel"></select>
+   <button class="big" id="cmtNext">ดำเนินการต่อ</button>
+  </div>
+  <div id="stepPin" style="display:none">
+   <div class="who" id="pinWho"></div>
+   <div id="setupBox" style="display:none">
+    <p class="bigtxt">ตั้งรหัส PIN สำหรับการเข้าใช้งานครั้งแรก</p>
+    <label for="actCode">รหัสเปิดใช้งาน (ขอจากผู้ดูแลระบบ)</label>
+    <input id="actCode" type="password" inputmode="numeric" autocomplete="off" maxlength="12">
+    <label for="pin1">PIN ใหม่ (ตัวเลข 5 หลัก)</label>
+    <input id="pin1" type="password" inputmode="numeric" autocomplete="off" maxlength="5">
+    <label for="pin2">ยืนยัน PIN</label>
+    <input id="pin2" type="password" inputmode="numeric" autocomplete="off" maxlength="5">
+   </div>
+   <div id="loginBox">
+    <label for="pinIn">รหัส PIN (5 หลัก)</label>
+    <input id="pinIn" type="password" inputmode="numeric" autocomplete="off" maxlength="5">
+   </div>
+   <button class="big" id="pinGo">เข้าสู่ระบบ</button>
+   <button class="big secondary" id="pinBack">กลับ</button>
+  </div>
+  <div class="login-msg" id="loginMsg" role="alert"></div>
+ </div>
+</div>
+<div class="wrap" id="appView" style="display:none">
+  <div class="card" id="userBar">
+   <div><div>สวัสดี <b id="userName"></b></div><div>ชุดที่รับผิดชอบ: <b id="userGroup"></b></div></div>
+   <button class="secondary" id="logoutBtn">ออกจากระบบ</button>
+  </div>
   <h1>💧 โปรแกรมคำนวณค่าน้ำประจำเดือน</h1>
   <div style="text-align:center;"><span class="conn-badge" id="connBadge"><span class="conn-dot"></span><span id="connText">กำลังเชื่อมต่อ Supabase...</span></span></div>
 
@@ -263,7 +307,7 @@ button:disabled{opacity:.6;cursor:not-allowed;}
   <div class="card">
     <h2 style="font-size:1.05rem;margin-top:0;">📊 สรุปยอดประจำเดือน</h2>
     <div class="summary" id="summary"></div>
-    <div class="sum-note">ยอดที่ต้องเก็บ = ค่าบำรุง 16 คน (160 บาท) + ค่าน้ำเฉพาะคนที่อ่านมิเตอร์ครบแล้ว</div>
+    <div class="sum-note" id="sumNote">ยอดที่ต้องเก็บ = ค่าบำรุง 16 คน (160 บาท) + ค่าน้ำเฉพาะคนที่อ่านมิเตอร์ครบแล้ว</div>
   </div>
 
   <div class="btn-row">
@@ -326,15 +370,13 @@ const supabaseClient = (SUPABASE_URL.indexOf("YOUR-PROJECT-REF")===-1)
   ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null; // ยังไม่ได้ตั้งค่า -> จะทำงานแบบออฟไลน์ด้วย LocalStorage เป็นสำรองเท่านั้น
 
-const NAMES = [
-"นางประไพ นามผา","นางเครื่อง บุตรตะนาม","นายกัมพล พรหมหาราช","นายวัชรินทร์ ศรีหนารถ",
-"นางหลอด ลัดทะจัก","นายสมศักดิ์ พันชา","นายวิเชียร พันเงิน","นางรอเยื้อน ศรีหนารถ",
-"นายประยุทธ์ ใสยัน","นางคำหลอ วรรณวิชิต","นางทองสิน ขุนน้อย","นายทองสอด แสนคำเพิงใจ",
-"นายบุญมาก นนทะลัย","นายสาคร อุทธรบุรณ์","นายคำดี มณีสอน","นายศักดิ์ณรงค์ เคหัง"
-];
+let NAMES = [];   // ชื่อ: โหลดจาก Supabase (people) ตามชุดของผู้ที่ login — ห้าม hardcode
+let PEOPLE = [];  // [{id,name,sort_order}] เรียง sort_order; PEOPLE[i].id = people.id จริง = water_bills.person_id
+let SESSION = null;
+const SESS_KEY = "wb_session_token";
 const THAI_MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
 const RATE = 7, MAINT = 10;
-const STORAGE_KEY = "water_bill_cache_v1";      // LocalStorage = แคชสำรองเท่านั้น ไม่ใช่แหล่งข้อมูลหลักอีกต่อไป
+let STORAGE_KEY = "water_bill_cache_v2_none"; // เปลี่ยนเป็น key แยกตามชุดหลัง login      // LocalStorage = แคชสำรองเท่านั้น ไม่ใช่แหล่งข้อมูลหลักอีกต่อไป
 const LAST_MONTH_KEY = "water_bill_last_month_v1";
 
 function monthLabel(v){ const [y,m]=v.split("-").map(Number); return THAI_MONTHS[m-1]+" "+y; }
@@ -374,15 +416,16 @@ function setConnBadge(kind, text){
 }
 
 async function fetchMonthFromSupabase(monthVal){
-  const { data, error } = await supabaseClient
-    .from(TABLE)
-    .select("*")
-    .eq("month", monthVal);
-  if(error) throw error;
+  const d = await rpc("get_group_bills", { p_token: SESSION.token, p_month: String(monthVal) });
+  if(!d || !d.ok){
+    if(d && d.error==="NO_SESSION") forceLogout("หมดเวลาใช้งาน กรุณาเข้าสู่ระบบใหม่");
+    throw new Error("get_group_bills failed");
+  }
   const rows = NAMES.map(()=>({prev:"",curr:"",note:"",paid:false}));
-  (data||[]).forEach(r=>{
-    const idx = Number(r.person_id) - 1;
-    if(idx>=0 && idx<16){
+  const idxById = new Map(PEOPLE.map((p,i)=>[Number(p.id), i])); // จับคู่ด้วย people.id ไม่ใช้ลำดับ
+  (d.bills||[]).forEach(r=>{
+    const idx = idxById.get(Number(r.person_id));
+    if(idx!==undefined){
       rows[idx] = {
         prev: r.prev_meter!=null ? String(r.prev_meter) : "",
         curr: r.curr_meter!=null ? String(r.curr_meter) : "",
@@ -438,55 +481,35 @@ async function loadMonthIntoStore(monthVal, force){
 let lastSupabaseError = null;
 
 async function upsertPersonToSupabase(monthVal, personId, row){
-  if(!supabaseClient) return false;
-
-  const payload = {
-    month: String(monthVal),
-    person_id: Number(personId),
-    prev_meter: row.prev ?? "",
-    curr_meter: row.curr ?? "",
-    note: row.note ?? "",
-    paid: !!row.paid,
-    updated_at: new Date().toISOString()
-  };
-
+  if(!supabaseClient || !SESSION) return false;
   try{
-    // .select() ทำให้เราตรวจได้ทันทีว่า INSERT/UPDATE สำเร็จจริง
-    const { data, error } = await supabaseClient
-      .from(TABLE)
-      .upsert(payload, { onConflict: "month,person_id" })
-      .select("month,person_id,prev_meter,curr_meter,note,paid")
-      .single();
-
-    if(error){
-      lastSupabaseError = error;
-      console.error("SUPABASE UPSERT ERROR:", {
-        code:error.code,
-        message:error.message,
-        details:error.details,
-        hint:error.hint
-      });
-      return false;
-    }
-
+    // ฝั่งฐานข้อมูลตรวจสิทธิ์ชุด + บันทึก audit_logs เอง
+    const d = await rpc("save_bill", {
+      p_token: SESSION.token, p_month: String(monthVal), p_person_id: Number(personId),
+      p_prev: row.prev ?? "", p_curr: row.curr ?? "", p_note: row.note ?? "", p_paid: !!row.paid
+    });
+    if(d && d.error==="NO_SESSION"){ forceLogout("หมดเวลาใช้งาน กรุณาเข้าสู่ระบบใหม่"); return false; }
+    if(!d || !d.ok){ lastSupabaseError = {message:(d && d.error) || "unknown"}; return false; }
     lastSupabaseError = null;
-    return !!data;
+    return true;
   }catch(err){
     lastSupabaseError = err;
-    console.error("SUPABASE CONNECTION ERROR:", err);
+    console.error("SUPABASE ERROR:", err);
     return false;
   }
 }
 
 // debounce ต่อแถว: พิมพ์ต่อเนื่องจะยิง upsert ครั้งเดียวหลังหยุดพิมพ์ ลดจำนวน request
 const syncTimers = {};
+let lastEditAt = 0;
 function scheduleSync(i, immediate){
+  lastEditAt = Date.now();
   clearTimeout(syncTimers[i]);
   const run = async ()=>{
     const monthVal = currVal;
     const row = getMonthData(monthVal).rows[i];
     setConnBadge("syncing", "กำลังซิงก์...");
-    const ok = await upsertPersonToSupabase(monthVal, i+1, row);
+    const ok = await upsertPersonToSupabase(monthVal, PEOPLE[i].id, row);
     if(ok){
       setConnBadge("online", "ซิงก์กับ Supabase แล้ว");
       showSyncedNote();
@@ -501,40 +524,25 @@ function scheduleSync(i, immediate){
 }
 
 // ---------- Realtime: ให้ทุกเครื่องเห็นข้อมูลเดียวกันโดยไม่ต้อง refresh ----------
-let realtimeChannel = null;
+let pollTimer = null;
 function subscribeRealtime(monthVal){
-  if(!supabaseClient) return;
-  if(realtimeChannel){ supabaseClient.removeChannel(realtimeChannel); realtimeChannel = null; }
-  realtimeChannel = supabaseClient
-    .channel("water_bills_"+monthVal)
-    .on("postgres_changes",
-      { event: "*", schema: "public", table: TABLE, filter: `month=eq.${monthVal}` },
-      (payload)=>{ handleRealtimeChange(payload, monthVal); }
-    )
-    .subscribe();
-}
-
-function handleRealtimeChange(payload, monthVal){
-  if(monthVal !== currVal) return; // เดือนถูกเปลี่ยนไปแล้วก่อนอีเวนต์มาถึง
-  const rec = payload.new && Object.keys(payload.new).length ? payload.new : payload.old;
-  if(!rec) return;
-  const idx = Number(rec.person_id) - 1;
-  if(idx<0 || idx>=16) return;
-
-  const data = getMonthData(currVal);
-  if(payload.eventType === "DELETE"){
-    data.rows[idx] = {prev:"",curr:"",note:"",paid:false};
-  } else {
-    data.rows[idx] = {
-      prev: rec.prev_meter!=null ? String(rec.prev_meter) : "",
-      curr: rec.curr_meter!=null ? String(rec.curr_meter) : "",
-      note: rec.note || "",
-      paid: !!rec.paid
-    };
-  }
-  saveLocalCache();
-  updateRowCells(idx); // อัปเดตเฉพาะแถวนั้น + Summary ไม่สร้างตารางใหม่ทั้งหมด, ไม่แย่ง focus (เช็คในฟังก์ชัน)
-  renderSummary();
+  clearInterval(pollTimer);
+  if(!supabaseClient || !SESSION) return;
+  pollTimer = setInterval(async ()=>{
+    if(document.hidden || monthVal !== currVal || Date.now()-lastEditAt < 4000) return;
+    try{
+      const fresh = await fetchMonthFromSupabase(monthVal);
+      if(monthVal !== currVal || Date.now()-lastEditAt < 4000) return;
+      const data = getMonthData(currVal);
+      fresh.rows.forEach((r,i)=>{
+        const tr = document.getElementById("row-"+i);
+        if(!tr || tr.contains(document.activeElement)) return;
+        const c = data.rows[i];
+        if(c.prev!==r.prev || c.curr!==r.curr || c.note!==r.note || c.paid!==r.paid){ data.rows[i]=r; updateRowCells(i); }
+      });
+      saveLocalCache(); renderSummary();
+    }catch(e){}
+  }, 15000);
 }
 
 function buildMonthOptions(sel, selected){
@@ -763,19 +771,19 @@ function renderSummary(){
       else waitingCount++;                             // ยังไม่ได้กรอกมิเตอร์เลย
     }
   });
-  const maintTotal = 16 * MAINT;
+  const maintTotal = NAMES.length * MAINT;
   const totalDue = maintTotal + totalWaterCalculated; // ค่าบำรุงของทุกคนนับเสมอ + ค่าน้ำเฉพาะคนที่อ่านมิเตอร์ครบ
   const outstandingRaw = totalDue - paidAmount;
   const outstanding = Math.max(0, outstandingRaw);
   const overpaid = outstandingRaw < 0 ? Math.abs(outstandingRaw) : 0;
   const items = [
-    ["👥 ผู้ใช้น้ำทั้งหมด", "16 คน", false],
+    ["👥 ผู้ใช้น้ำทั้งหมด", NAMES.length+" คน", false],
     ["⏳ รออ่านมิเตอร์", waitingCount+" คน", false],
     ["⚠️ ข้อมูลไม่ครบ", incompleteCount+" คน", incompleteCount>0],
     ["⚠️ มิเตอร์ผิดปกติ", invalidCount+" คน", invalidCount>0],
     ["💧 จำนวนหน่วยที่ใช้รวม", totalUnits+" หน่วย", false],
     ["💰 ค่าน้ำรวม (เฉพาะที่อ่านมิเตอร์แล้ว)", totalWaterCalculated.toLocaleString()+" บาท", false],
-    ["🔧 ค่าบำรุงรักษารวม (16 คน)", maintTotal.toLocaleString()+" บาท", false],
+    ["🔧 ค่าบำรุงรักษารวม ("+NAMES.length+" คน)", maintTotal.toLocaleString()+" บาท", false],
     ["💵 ยอดเงินที่ต้องเก็บ", totalDue.toLocaleString()+" บาท", false],
     ["✅ เก็บเงินแล้ว", paidCount+" คน", false],
     ["💰 ยอดเงินที่เก็บแล้ว", paidAmount.toLocaleString()+" บาท", false],
@@ -784,6 +792,7 @@ function renderSummary(){
   if(overpaid>0){
     items.push(["⚠️ ยอดเกินที่ต้องเก็บ", overpaid.toLocaleString()+" บาท (ตรวจสอบข้อมูล)", true]);
   }
+  document.getElementById("sumNote").textContent = "ยอดที่ต้องเก็บ = ค่าบำรุง "+NAMES.length+" คน ("+maintTotal+" บาท) + ค่าน้ำเฉพาะคนที่อ่านมิเตอร์ครบแล้ว";
   const box = document.getElementById("summary");
   box.innerHTML = items.map(([l,v,w])=>`<div class="sum-item${w?' warn-item':''}"><div class="label">${l}</div><div class="value">${v}</div></div>`).join("");
 }
@@ -838,7 +847,7 @@ document.getElementById("saveBtn").addEventListener("click", async ()=>{
     setConnBadge("syncing", "กำลังบันทึกลงฐานข้อมูลกลาง...");
 
     const results = await Promise.all(
-      data.rows.map((row,i)=> upsertPersonToSupabase(currVal, i+1, row))
+      data.rows.map((row,i)=> upsertPersonToSupabase(currVal, PEOPLE[i].id, row))
     );
     const failed = results.filter(Boolean).length !== data.rows.length;
 
@@ -852,7 +861,7 @@ document.getElementById("saveBtn").addEventListener("click", async ()=>{
     }else{
       // ตรวจซ้ำหลังบันทึก เพื่อไม่แสดงว่า "สำเร็จ" ทั้งที่ฐานข้อมูลยังไม่มีข้อมูล
       const verified = await fetchMonthFromSupabase(currVal);
-      if((verified.rows || []).length === 16){
+      if((verified.rows || []).length === NAMES.length){
         store[currVal] = verified;
         saveLocalCache();
         setConnBadge("online", "บันทึกและซิงก์กับ Supabase แล้ว");
@@ -906,20 +915,20 @@ function buildPrintForm(){
 
   // แบบฟอร์มกระดาษ: 16 รายชื่อ + ช่องว่างอีก 6 แถว
   for(let i=0; i<22; i++){
-    const row = i < 16 ? data.rows[i] : {prev:"", curr:"", note:""};
-    const r = i < 16 ? calcRow(row) : {units:null, water:null, total:null};
+    const row = i < NAMES.length ? data.rows[i] : {prev:"", curr:"", note:""};
+    const r = i < NAMES.length ? calcRow(row) : {units:null, water:null, total:null};
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${i < 16 ? i+1 : ""}</td>
-      <td class="p-name">${i < 16 ? escapePrintText(NAMES[i]) : ""}</td>
-      <td>${i < 16 ? escapePrintText(row.prev || "") : ""}</td>
-      <td>${i < 16 ? escapePrintText(row.curr || "") : ""}</td>
-      <td>${i < 16 && r.units != null ? r.units : ""}</td>
-      <td>${i < 16 && r.water != null ? r.water : ""}</td>
-      <td>${i < 16 ? MAINT : ""}</td>
-      <td>${i < 16 && r.total != null ? r.total : ""}</td>
-      <td class="p-note">${i < 16 ? escapePrintText(row.note || "") : ""}</td>
+      <td>${i < NAMES.length ? i+1 : ""}</td>
+      <td class="p-name">${i < NAMES.length ? escapePrintText(NAMES[i]) : ""}</td>
+      <td>${i < NAMES.length ? escapePrintText(row.prev || "") : ""}</td>
+      <td>${i < NAMES.length ? escapePrintText(row.curr || "") : ""}</td>
+      <td>${i < NAMES.length && r.units != null ? r.units : ""}</td>
+      <td>${i < NAMES.length && r.water != null ? r.water : ""}</td>
+      <td>${i < NAMES.length ? MAINT : ""}</td>
+      <td>${i < NAMES.length && r.total != null ? r.total : ""}</td>
+      <td class="p-note">${i < NAMES.length ? escapePrintText(row.note || "") : ""}</td>
     `;
     tbody.appendChild(tr);
   }
@@ -931,12 +940,105 @@ document.getElementById("printBtn").addEventListener("click", ()=>{
 });
 
 
-(async function init(){
-  try{ localStorage.setItem(LAST_MONTH_KEY, currVal); }catch(e){}
-  if(!supabaseClient) setConnBadge("offline", "ยังไม่ได้ตั้งค่า Supabase (ดูคอมเมนต์ SUPABASE_URL/ANON_KEY ในโค้ด)");
+// ============ AUTH: ตรวจ PIN/สิทธิ์ที่ฝั่ง Supabase (RPC) ทั้งหมด ============
+const $ = id => document.getElementById(id);
+async function rpc(fn, args){
+  const { data, error } = await supabaseClient.rpc(fn, args);
+  if(error) throw error;
+  return data;
+}
+function forceLogout(msg){
+  try{ sessionStorage.removeItem(SESS_KEY); localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  if(msg) alert(msg);
+  location.reload();
+}
+const isWeakPin = p => /^(\d)\1{4}$/.test(p) || "0123456789".includes(p) || "9876543210".includes(p);
+function loginMsg(t){ $("loginMsg").textContent = t || ""; }
+function errText(d){
+  const left = d.remaining!=null ? " (เหลืออีก "+d.remaining+" ครั้ง)" : "";
+  if(d.error==="LOCKED") return "กรอกผิดหลายครั้ง ระบบล็อกชั่วคราว กรุณารอ "+(d.minutes||15)+" นาที แล้วลองใหม่";
+  if(d.error==="BAD_PIN") return "รหัส PIN ไม่ถูกต้อง"+left;
+  if(d.error==="BAD_CODE") return "รหัสเปิดใช้งานไม่ถูกต้อง"+left;
+  if(d.error==="WEAK_PIN") return "PIN เดาง่ายเกินไป กรุณาเลือกรหัสอื่น";
+  if(d.error==="NOT_ALLOWED") return "ยังตั้ง PIN ไม่ได้ กรุณาติดต่อผู้ดูแลระบบเพื่อขอรหัสเปิดใช้งาน";
+  return "เกิดข้อผิดพลาด กรุณาลองใหม่";
+}
+
+let COMMITTEES = [];
+async function showLogin(){
+  $("appView").style.display = "none"; $("loginView").style.display = "";
+  try{
+    COMMITTEES = await rpc("list_committees");
+    $("cmtSel").innerHTML = COMMITTEES.map(c=>`<option value="${Number(c.id)}">${escapePrintText(c.name)}</option>`).join("");
+  }catch(e){ loginMsg("โหลดรายชื่อกรรมการไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่"); }
+}
+$("cmtNext").onclick = ()=>{
+  const c = COMMITTEES.find(x=>Number(x.id)===Number($("cmtSel").value));
+  if(!c) return;
+  loginMsg(""); $("stepPick").style.display = "none"; $("stepPin").style.display = "";
+  $("pinWho").textContent = c.name;
+  const first = !c.has_pin;
+  $("setupBox").style.display = first ? "" : "none";
+  $("loginBox").style.display = first ? "none" : "";
+  $("pinGo").textContent = first ? "ตั้ง PIN และเข้าสู่ระบบ" : "เข้าสู่ระบบ";
+  $("pinGo").dataset.first = first ? "1" : "";
+  $("pinGo").dataset.id = String(c.id);
+  ["actCode","pin1","pin2","pinIn"].forEach(k=>{ $(k).value = ""; });
+};
+$("pinBack").onclick = ()=>{ loginMsg(""); $("stepPin").style.display = "none"; $("stepPick").style.display = ""; };
+$("pinGo").onclick = async ()=>{
+  const btn = $("pinGo"), id = Number(btn.dataset.id), first = !!btn.dataset.first;
+  let res;
+  btn.disabled = true; loginMsg("");
+  try{
+    if(first){
+      const code = $("actCode").value.trim(), p1 = $("pin1").value, p2 = $("pin2").value;
+      if(!code) return loginMsg("กรุณากรอกรหัสเปิดใช้งาน");
+      if(!/^\d{5}$/.test(p1)) return loginMsg("PIN ต้องเป็นตัวเลข 5 หลักเท่านั้น");
+      if(p1!==p2) return loginMsg("PIN ทั้งสองช่องไม่ตรงกัน");
+      if(isWeakPin(p1)) return loginMsg("PIN เดาง่ายเกินไป กรุณาเลือกรหัสอื่น");
+      res = await rpc("setup_pin", { p_committee_id:id, p_code:code, p_pin:p1 });
+    }else{
+      const p = $("pinIn").value;
+      if(!/^\d{5}$/.test(p)) return loginMsg("กรุณากรอก PIN ตัวเลข 5 หลัก");
+      res = await rpc("login_committee", { p_committee_id:id, p_pin:p });
+    }
+  }catch(e){ return loginMsg("เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่"); }
+  finally{ btn.disabled = false; }
+  if(!res || !res.ok) return loginMsg(errText(res || {}));
+  ["actCode","pin1","pin2","pinIn"].forEach(k=>{ $(k).value = ""; });
+  try{ sessionStorage.setItem(SESS_KEY, res.token); }catch(e){}
+  await enterApp(res);
+};
+$("logoutBtn").onclick = async ()=>{
+  try{ await rpc("logout_committee", { p_token: SESSION.token }); }catch(e){}
+  forceLogout();
+};
+
+async function enterApp(sess){
+  SESSION = sess;
+  STORAGE_KEY = "water_bill_cache_v2_g"+sess.group_id; // แคชแยกตามชุด และล้างตอน logout
+  try{ localStorage.removeItem("water_bill_cache_v1"); }catch(e){}
+  const d = await rpc("get_group_bills", { p_token: sess.token, p_month: String(currVal) });
+  if(!d || !d.ok) return forceLogout("เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่");
+  PEOPLE = d.people; NAMES = PEOPLE.map(p=>p.name);
+  $("userName").textContent = sess.name; $("userGroup").textContent = sess.group_name;
+  $("loginView").style.display = "none"; $("appView").style.display = "";
   await carryOverFromPrev();
   await buildTableSkeleton();
   subscribeRealtime(currVal);
+}
+
+(async function init(){
+  try{ localStorage.setItem(LAST_MONTH_KEY, currVal); }catch(e){}
+  if(!supabaseClient){ $("loginView").style.display = ""; return loginMsg("ยังไม่ได้ตั้งค่า Supabase"); }
+  let tok = null;
+  try{ tok = sessionStorage.getItem(SESS_KEY); }catch(e){}
+  if(tok){
+    try{ const sess = await rpc("session_info", { p_token: tok }); if(sess && sess.ok){ await enterApp(sess); return; } }catch(e){}
+    try{ sessionStorage.removeItem(SESS_KEY); }catch(e){}
+  }
+  await showLogin();
 })();
 </script>
 </body>
