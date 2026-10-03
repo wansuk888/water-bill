@@ -297,6 +297,8 @@ button.big{width:100%;font-size:1.5rem;padding:16px;margin-top:16px;}
   }
   .print-summary-grid .ps-line b{font-weight:700;}
   .print-summary-grid .ps-line + .ps-line{border-top:1px solid #000;}
+  .print-summary-grid .ps-total{border-top:2px solid #000 !important;}
+  .print-summary-grid .ps-total span{font-weight:700;}
   .print-summary-grid .ps-note{
     font-size:10pt;
     font-weight:300;
@@ -1101,6 +1103,7 @@ function buildPrintForm(){
   document.getElementById("printSummary").innerHTML =
     '<div class="ps-line"><span>ยอดรวมที่เก็บได้ (' + t.paidCount + ' คน)</span><b>' + fmtBaht(t.paidAmount) + ' บาท</b></div>' +
     '<div class="ps-line"><span>ยอดค้างชำระ (' + t.unpaidCount + ' คน)</span><b>' + fmtBaht(Math.max(0, t.due - t.paidAmount)) + ' บาท</b></div>' +
+    '<div class="ps-line ps-total"><span>ค่ารวมทั้งหมด (ไม่รวมกรรมการ)</span><b>' + fmtBaht(t.due) + ' บาท</b></div>' +
     (skipped.length ? '<div class="ps-note">(' + skipped.join(" • ") + ')</div>' : "");
 }
 
