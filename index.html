@@ -120,16 +120,43 @@ button.big{width:100%;font-size:1.5rem;padding:16px;margin-top:16px;}
    ============================================================ */
 .print-form{display:none;}
 
-/* ระยะขอบกระดาษ: บน/ล่าง 2 ซม. ซ้าย/ขวา 2.5 ซม. */
+/* ระยะขอบกระดาษที่ต้องการ: บน/ล่าง 2 ซม. ซ้าย/ขวา 2.5 ซม.
+   ตั้ง @page margin = 0 แล้วสร้างระยะขอบจริงด้วยตารางกรอบ .print-frame (ซ้าย/ขวา 25 มม. จาก padding,
+   บน/ล่าง 20 มม. จากแถว thead/tfoot ที่ซ้ำทุกหน้า) เพราะถ้า @page มีขอบ เบราว์เซอร์ (Chrome/Edge)
+   จะวาด URL / เลขหน้า / ชื่อเอกสาร ลงในพื้นที่ขอบนั้น แต่ถ้าขอบ = 0 จะไม่มีที่ให้วาด */
 @page{
   size:A4 landscape;
-  margin:20mm 25mm 20mm 25mm;
+  margin:0;
 }
 
 @media print{
   @page{
     size:A4 landscape;
-    margin:20mm 25mm 20mm 25mm;
+    margin:0;
+  }
+
+  /* ตารางกรอบ: สร้างระยะขอบ บน/ล่าง 20 มม. (ทุกหน้า) และ ซ้าย/ขวา 25 มม. */
+  .print-frame{
+    width:100%;
+    border-collapse:collapse;
+    border-spacing:0;
+    table-layout:fixed;
+    border:0 !important;
+  }
+  .print-frame > thead{display:table-header-group;}
+  .print-frame > tfoot{display:table-footer-group;}
+  .print-frame > thead > tr > td,
+  .print-frame > tfoot > tr > td{
+    height:20mm;
+    padding:0 !important;
+    border:0 !important;
+    background:transparent !important;
+  }
+  .print-frame > tbody > tr > td{
+    padding:0 25mm !important;
+    border:0 !important;
+    vertical-align:top;
+    background:transparent !important;
   }
 
   html,body{
@@ -360,7 +387,7 @@ button.big{width:100%;font-size:1.5rem;padding:16px;margin-top:16px;}
   <div class="card">
     <h2 style="font-size:1.05rem;margin-top:0;">📊 สรุปยอดประจำเดือน</h2>
     <div class="summary" id="summary"></div>
-    <div class="sum-note" id="sumNote">ยอดที่ต้องเก็บ = ค่าบำรุง 16 คน (160 บาท) + ค่าน้ำเฉพาะคนที่อ่านมิเตอร์ครบแล้ว</div>
+    <div class="sum-note" id="sumNote"></div>
   </div>
 
   <div class="btn-row">
@@ -377,6 +404,9 @@ button.big{width:100%;font-size:1.5rem;padding:16px;margin-top:16px;}
        PRINT FORM — สร้างตามแบบฟอร์มหลักเมื่อกดพิมพ์
        ============================================================ -->
   <section id="printForm" class="print-form" aria-hidden="true">
+   <table class="print-frame">
+    <thead><tr><td></td></tr></thead>
+    <tbody><tr><td>
     <div class="print-title" id="printTitle">ตัวเลขมิเตอร์น้ำประปาประจำเดือน ................................ พ.ศ. ................</div>
     <table class="print-table">
       <thead>
@@ -392,8 +422,8 @@ button.big{width:100%;font-size:1.5rem;padding:16px;margin-top:16px;}
           <th class="p-note" rowspan="2">หมายเหตุ</th>
         </tr>
         <tr>
-          <th class="p-meter">วัน</th>
-          <th class="p-meter">วัน</th>
+          <th class="p-meter" id="printPrevDate">วัน</th>
+          <th class="p-meter" id="printCurrDate">วัน</th>
           <th class="p-units">(หน่วย)</th>
           <th class="p-water">(หน่วย 7 บาท)</th>
           <th class="p-maint">ค่าบำรุงรักษา</th>
@@ -406,6 +436,9 @@ button.big{width:100%;font-size:1.5rem;padding:16px;margin-top:16px;}
       <div class="print-sign-box">ลงชื่อ ........................................................<br>ผู้บันทึก</div>
       <div class="print-sign-box">ลงชื่อ ........................................................<br>ผู้ตรวจสอบ</div>
     </div>
+    </td></tr></tbody>
+    <tfoot><tr><td></td></tr></tfoot>
+   </table>
   </section>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -808,44 +841,74 @@ function showSyncedNote(){
   saveTimer = setTimeout(()=>{ note.textContent=""; }, 3000);
 }
 
-function renderSummary(){
-  const data = getMonthData(currVal);
-  let totalUnits=0, totalWaterCalculated=0, paidCount=0, paidAmount=0, waitingCount=0, incompleteCount=0, invalidCount=0;
-  data.rows.forEach(row=>{
+// ===== กติกาคำนวณยอดชุดเดียว ใช้ร่วมกันทั้ง "สรุปยอดประจำเดือน" และ "ตารางสำหรับพิมพ์" =====
+// - แถวกรรมการ (isCommitteeRow) ไม่นับในยอดเงินและจำนวนผู้ชำระ/ค้างชำระ (เหมือนกันทั้งสองส่วน)
+// - ผู้ที่ต้องชำระทุกคนมีค่าบำรุง MAINT บาท เสมอ ส่วนค่าน้ำนับเฉพาะคนที่อ่านมิเตอร์ครบ 4 หลักและไม่ผิดปกติ
+// - ยอดที่ต้องเก็บ = ค่าบำรุงผู้ต้องชำระทุกคน + ค่าน้ำที่คำนวณได้ ; ค้างชำระ = ที่ต้องเก็บ - เก็บแล้ว
+//   (คนที่ยังคำนวณค่าน้ำไม่ได้ ถือว่าค้างเฉพาะค่าบำรุง ไม่เดาจำนวนหน่วย)
+// - ตัวนับ รออ่าน/ข้อมูลไม่ครบ/ผิดปกติ นับจากสถานะมิเตอร์ของทุกแถว (เป็นข้อมูลการอ่านมิเตอร์ ไม่ใช่ยอดเงิน)
+function computeTotals(data){
+  const t = {
+    all: data.rows.length, committee: 0, payers: 0,
+    waiting: 0, incomplete: 0, invalid: 0,
+    units: 0, water: 0, maint: 0, due: 0,
+    paidCount: 0, paidAmount: 0,
+    unpaidCount: 0, unpaidAmount: 0,
+    unresolvedPayers: 0   // ผู้ต้องชำระที่ยังคำนวณค่าน้ำไม่ได้ (นับเฉพาะค่าบำรุงในยอดค้าง)
+  };
+  data.rows.forEach((row, i)=>{
     const r = calcRow(row);
+    const state = meterState(row, r);
+    if(state==="invalid") t.invalid++;
+    else if(state==="incomplete") t.incomplete++;
+    else if(state==="waiting") t.waiting++;
+
+    if(isCommitteeRow(row, NAMES[i])){ t.committee++; return; }   // กรรมการ: ไม่รวมในยอดเงิน
+    t.payers++;
+    t.maint += MAINT;
     if(r.total!=null){
-      totalUnits += r.units;
-      totalWaterCalculated += r.water;
-      if(row.paid){ paidCount++; paidAmount += r.total; }
+      t.units += r.units;
+      t.water += r.water;
+      if(row.paid){ t.paidCount++; t.paidAmount += r.total; }
+      else { t.unpaidCount++; t.unpaidAmount += r.total; }
     } else {
-      const state = meterState(row, r);
-      if(state==="invalid") invalidCount++;          // มิเตอร์ครั้งหลัง < ครั้งก่อน
-      else if(state==="incomplete") incompleteCount++; // กรอกแล้วแต่ยังไม่ครบ 4 หลัก
-      else waitingCount++;                             // ยังไม่ได้กรอกมิเตอร์เลย
+      t.unresolvedPayers++;
+      t.unpaidCount++; t.unpaidAmount += MAINT;
     }
   });
-  const maintTotal = NAMES.length * MAINT;
-  const totalDue = maintTotal + totalWaterCalculated; // ค่าบำรุงของทุกคนนับเสมอ + ค่าน้ำเฉพาะคนที่อ่านมิเตอร์ครบ
-  const outstandingRaw = totalDue - paidAmount;
+  t.due = t.maint + t.water;
+  return t;
+}
+
+function renderSummary(){
+  const data = getMonthData(currVal);
+  const t = computeTotals(data);
+  const outstandingRaw = t.due - t.paidAmount;
   const outstanding = Math.max(0, outstandingRaw);
   const overpaid = outstandingRaw < 0 ? Math.abs(outstandingRaw) : 0;
+  const exNote = t.committee>0 ? " • ไม่รวมกรรมการ" : "";
   const items = [
-    ["👥 ผู้ใช้น้ำทั้งหมด", NAMES.length+" คน", false],
-    ["⏳ รออ่านมิเตอร์", waitingCount+" คน", false],
-    ["⚠️ ข้อมูลไม่ครบ", incompleteCount+" คน", incompleteCount>0],
-    ["⚠️ มิเตอร์ผิดปกติ", invalidCount+" คน", invalidCount>0],
-    ["💧 จำนวนหน่วยที่ใช้รวม", totalUnits+" หน่วย", false],
-    ["💰 ค่าน้ำรวม (เฉพาะที่อ่านมิเตอร์แล้ว)", totalWaterCalculated.toLocaleString()+" บาท", false],
-    ["🔧 ค่าบำรุงรักษารวม ("+NAMES.length+" คน)", maintTotal.toLocaleString()+" บาท", false],
-    ["💵 ยอดเงินที่ต้องเก็บ", totalDue.toLocaleString()+" บาท", false],
-    ["✅ เก็บเงินแล้ว", paidCount+" คน", false],
-    ["💰 ยอดเงินที่เก็บแล้ว", paidAmount.toLocaleString()+" บาท", false],
-    ["⏳ ยอดเงินค้างเก็บ", outstanding.toLocaleString()+" บาท", false],
+    ["👥 ผู้ใช้น้ำทั้งหมด", t.all+" คน", false],
   ];
+  if(t.committee>0) items.push(["🏛️ กรรมการ (ไม่นับยอดเงิน)", t.committee+" คน", false]);
+  items.push(
+    ["⏳ รออ่านมิเตอร์", t.waiting+" คน", false],
+    ["⚠️ ข้อมูลไม่ครบ", t.incomplete+" คน", t.incomplete>0],
+    ["⚠️ มิเตอร์ผิดปกติ", t.invalid+" คน", t.invalid>0],
+    ["💧 จำนวนหน่วยที่ใช้รวม"+exNote, t.units+" หน่วย", false],
+    ["💰 ค่าน้ำรวม (เฉพาะที่อ่านมิเตอร์แล้ว)"+exNote, t.water.toLocaleString()+" บาท", false],
+    ["🔧 ค่าบำรุงรักษารวม ("+t.payers+" คน)", t.maint.toLocaleString()+" บาท", false],
+    ["💵 ยอดเงินที่ต้องเก็บ", t.due.toLocaleString()+" บาท", false],
+    ["✅ เก็บเงินแล้ว", t.paidCount+" คน", false],
+    ["💰 ยอดเงินที่เก็บแล้ว", t.paidAmount.toLocaleString()+" บาท", false],
+    ["⏳ ยอดเงินค้างเก็บ ("+t.unpaidCount+" คน)", outstanding.toLocaleString()+" บาท", false]
+  );
   if(overpaid>0){
     items.push(["⚠️ ยอดเกินที่ต้องเก็บ", overpaid.toLocaleString()+" บาท (ตรวจสอบข้อมูล)", true]);
   }
-  document.getElementById("sumNote").textContent = "ยอดที่ต้องเก็บ = ค่าบำรุง "+NAMES.length+" คน ("+maintTotal+" บาท) + ค่าน้ำเฉพาะคนที่อ่านมิเตอร์ครบแล้ว";
+  document.getElementById("sumNote").textContent =
+    "ยอดที่ต้องเก็บ = ค่าบำรุง "+t.payers+" คน ("+t.maint+" บาท) + ค่าน้ำเฉพาะคนที่อ่านมิเตอร์ครบแล้ว" +
+    (t.committee>0 ? " • ไม่รวมกรรมการ "+t.committee+" คน" : "");
   const box = document.getElementById("summary");
   box.innerHTML = items.map(([l,v,w])=>`<div class="sum-item${w?' warn-item':''}"><div class="label">${l}</div><div class="value">${v}</div></div>`).join("");
 }
@@ -974,6 +1037,13 @@ function isCommitteeName(name){
 // แถวกรรมการ = ชื่ออยู่ในรายชื่อกรรมการ หรือหมายเหตุเดิมมีคำว่า "กรรมการ"
 function isCommitteeRow(row, name){ return isCommitteeName(name) || /กรรมการ/.test(row.note || ""); }
 function fmtBaht(n){ return Number(n).toLocaleString(); }
+const THAI_MONTH_ABBR = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+// monthVal รูปแบบ "พ.ศ.-เดือน" เช่น "2569-10" -> "วันต.ค. 69"
+function meterDateLabel(monthVal){
+  const [y,m] = String(monthVal).split("-").map(Number);
+  if(!y || !m || m<1 || m>12) return "วัน";   // ข้อมูลไม่พอ: คงข้อความเดิม ไม่เดา
+  return "วัน" + THAI_MONTH_ABBR[m-1] + " " + String(y % 100).padStart(2,"0");
+}
 
 function printNoteHtml(row, r, name){
   const note = (row.note || "").trim();
@@ -998,19 +1068,15 @@ function buildPrintForm(){
   const tbody = document.getElementById("printTbody");
   tbody.innerHTML = "";
 
-  let collected = 0, outstanding = 0, unresolved = 0, committeeCount = 0;
+  // วันที่ใต้ช่องมิเตอร์: "วัน" + ตัวย่อเดือน + ปี พ.ศ. 2 หลัก ตามรอบอ่านมิเตอร์ของแต่ละคอลัมน์
+  // ครั้งก่อน = เดือนก่อนหน้า (prevVal) , ครั้งหลัง = เดือนที่เลือก (currVal) ตามหัวคอลัมน์บนหน้าจอ
+  document.getElementById("printPrevDate").textContent = meterDateLabel(prevMonthValue(currVal));
+  document.getElementById("printCurrDate").textContent = meterDateLabel(currVal);
 
   // แบบฟอร์มกระดาษ: 16 รายชื่อ + ช่องว่างอีก 6 แถว
   for(let i=0; i<22; i++){
     const row = i < NAMES.length ? data.rows[i] : {prev:"", curr:"", note:"", paid:false};
     const r = i < NAMES.length ? calcRow(row) : {units:null, water:null, total:null};
-
-    if(i < NAMES.length){
-      if(isCommitteeRow(row, NAMES[i])) committeeCount++;          // กรรมการ: ไม่รวมในยอดชำระ/ค้าง
-      else if(r.total==null) unresolved++;               // ยอดไม่ชัดเจน: ไม่นำมาเดา
-      else if(row.paid) collected += r.total;            // ชำระแล้ว
-      else outstanding += r.total;                       // ยังไม่ชำระ
-    }
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -1027,12 +1093,14 @@ function buildPrintForm(){
     tbody.appendChild(tr);
   }
 
+  // ยอดสรุปท้ายตาราง: ใช้ computeTotals() ตัวเดียวกับหน้า "สรุปยอดประจำเดือน"
+  const t = computeTotals(data);
   const skipped = [];
-  if(committeeCount) skipped.push("ไม่รวมกรรมการ " + committeeCount + " แถว");
-  if(unresolved) skipped.push("ไม่รวม " + unresolved + " แถวที่ยังคำนวณยอดไม่ได้");
+  if(t.committee) skipped.push("ไม่รวมกรรมการ " + t.committee + " แถว");
+  if(t.unresolvedPayers) skipped.push("ค้างเฉพาะค่าบำรุงสำหรับ " + t.unresolvedPayers + " แถวที่ยังคำนวณค่าน้ำไม่ได้");
   document.getElementById("printSummary").innerHTML =
-    '<div class="ps-line"><span>ยอดรวมที่เก็บได้</span><b>' + fmtBaht(collected) + ' บาท</b></div>' +
-    '<div class="ps-line"><span>ยอดค้างชำระ</span><b>' + fmtBaht(outstanding) + ' บาท</b></div>' +
+    '<div class="ps-line"><span>ยอดรวมที่เก็บได้ (' + t.paidCount + ' คน)</span><b>' + fmtBaht(t.paidAmount) + ' บาท</b></div>' +
+    '<div class="ps-line"><span>ยอดค้างชำระ (' + t.unpaidCount + ' คน)</span><b>' + fmtBaht(Math.max(0, t.due - t.paidAmount)) + ' บาท</b></div>' +
     (skipped.length ? '<div class="ps-note">(' + skipped.join(" • ") + ')</div>' : "");
 }
 
