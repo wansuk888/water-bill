@@ -120,108 +120,161 @@ button.big{width:100%;font-size:1.5rem;padding:16px;margin-top:16px;}
    ============================================================ */
 .print-form{display:none;}
 
-  @media print{
-    @page{
-      size:A4 landscape;
-      margin:5mm 10mm 5mm 10mm;
-    }
+/* ระยะขอบกระดาษ: บน/ล่าง 2 ซม. ซ้าย/ขวา 2.5 ซม. */
+@page{
+  size:A4 landscape;
+  margin:20mm 25mm 20mm 25mm;
+}
 
-    html,body{
-      width:100%;
-      height:auto;
-      margin:0 !important;
-      padding:0 !important;
-      background:#fff !important;
-      color:#000 !important;
-      font-family:"TH Sarabun New","Sarabun",Arial,sans-serif !important;
-      -webkit-print-color-adjust:exact;
-      print-color-adjust:exact;
-    }
+@media print{
+  @page{
+    size:A4 landscape;
+    margin:20mm 25mm 20mm 25mm;
+  }
 
-    body > .wrap{display:none !important;}
+  html,body{
+    width:100%;
+    height:auto;
+    margin:0 !important;
+    padding:0 !important;
+    background:#fff !important;
+    color:#000 !important;
+    font-family:"Thai Sarabun","THSarabunNew","TH Sarabun New","TH SarabunPSK","Sarabun","Noto Sans Thai","Tahoma",sans-serif !important;
+    font-weight:300;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
 
-    .print-form{
-      display:block !important;
-      width:100%;
-      color:#000 !important;
-      background:#fff !important;
-      font-family:"TH Sarabun New","Sarabun",Arial,sans-serif !important;
-    }
+  body > .wrap,
+  body > #loginView{display:none !important;}
 
-    .print-title{
-      font-size:14pt;
-      font-weight:400;
-      text-align:left;
-      margin:0 0 3mm 0;
-      line-height:1.1;
-    }
+  .print-form{
+    display:block !important;
+    width:100%;
+    color:#000 !important;
+    background:#fff !important;
+    font-family:"Thai Sarabun","THSarabunNew","TH Sarabun New","TH SarabunPSK","Sarabun","Noto Sans Thai","Tahoma",sans-serif !important;
+    font-weight:300;
+  }
 
-    .print-subtitle,
-    .print-summary,
-    .print-sign{
-      display:none !important;
-    }
+  /* หัวข้อ "ตัวเลขมิเตอร์น้ำ... ประจำเดือน [เดือน]" = ตัวหนา */
+  .print-title{
+    font-size:14pt;
+    font-weight:700;
+    text-align:left;
+    margin:0 0 3mm 0;
+    line-height:1.1;
+  }
 
-    .print-table{
-      width:100%;
-      max-width:100%;
-      border-collapse:collapse;
-      border-spacing:0;
-      table-layout:fixed;
-      margin:0;
-      font-size:11pt;
-    }
+  .print-subtitle,
+  .print-sign{
+    display:none !important;
+  }
 
-    .print-table th,
-    .print-table td{
-      border:1px solid #000 !important;
-      padding:1.5px 3px;
-      text-align:center;
-      vertical-align:middle;
-      color:#000 !important;
-      background:#fff !important;
-      line-height:1.05;
-      overflow:hidden;
-    }
+  .print-table{
+    width:100%;
+    max-width:100%;
+    border-collapse:collapse;
+    border-spacing:0;
+    table-layout:fixed;
+    margin:0;
+    font-size:12pt;
+    font-weight:300;
+  }
 
-    .print-table thead th{
-      font-weight:700;
-      font-size:12pt;
-      height:7.5mm;
-    }
+  .print-table th,
+  .print-table td{
+    border:1px solid #000 !important;
+    padding:0 3px;
+    text-align:center;
+    vertical-align:middle;
+    color:#000 !important;
+    background:#fff !important;
+    line-height:1.05;
+    overflow:hidden;
+    font-weight:300;
+  }
 
-    .print-table thead tr:nth-child(2) th{
-      height:7.5mm;
-      font-weight:400;
-      font-size:12pt;
-    }
+  /* หัวตาราง: ตัวปกติ และทำซ้ำเมื่อขึ้นหน้าใหม่ */
+  .print-table thead{display:table-header-group;}
+  .print-table tfoot{display:table-footer-group;}
+  .print-table thead th{
+    font-weight:400;
+    font-size:12pt;
+    height:7mm;
+  }
 
-    /* 9 columns — สัดส่วนตามตารางในไฟล์ .docx ต้นแบบ (รวม 100%) */
-    .print-table .p-idx{width:4.4%;}
-    .print-table .p-name{width:22.2%; text-align:left;}
-    .print-table thead .p-name{text-align:center;}
-    .print-table .p-meter{width:10.4%;}
-    .print-table .p-units{width:9.3%;}
-    .print-table .p-water{width:10.4%;}
-    .print-table .p-maint{width:10.4%;}
-    .print-table .p-total{width:10.4%;}
-    .print-table .p-note{width:12.2%; text-align:center;}
+  .print-table thead tr:nth-child(2) th{
+    height:7mm;
+    font-weight:400;
+    font-size:12pt;
+  }
 
-    .print-table tbody tr{
-      height:6mm;
-      page-break-inside:avoid;
-    }
+  /* 9 columns — สัดส่วนตามตารางในไฟล์ .docx ต้นแบบ (รวม 100%) */
+  .print-table .p-idx{width:4.4%;}
+  .print-table .p-name{width:22.2%; text-align:left;}
+  .print-table thead .p-name{text-align:center;}
+  .print-table .p-meter{width:10.4%;}
+  .print-table .p-units{width:9.3%;}
+  .print-table .p-water{width:10.4%;}
+  .print-table .p-maint{width:10.4%;}
+  .print-table .p-total{width:10.4%;}
+  .print-table .p-note{width:12.2%; text-align:center; white-space:nowrap;}
 
-    .print-table tbody td{
-      height:6mm;
-      font-size:11pt;
-    }
+  .print-table tbody tr{
+    height:5.4mm;
+    page-break-inside:avoid;
+    break-inside:avoid;
+  }
 
-    .print-table th.p-idx,
-    .print-table th.p-name{
-      vertical-align:middle;
-      text-align:center;
-    }
+  .print-table tbody td{
+    height:5.4mm;
+    font-size:12pt;
+  }
+
+  .print-table th.p-idx,
+  .print-table th.p-name{
+    vertical-align:middle;
+    text-align:center;
+  }
+
+  /* เครื่องหมายถูก ✓ เป็นอักขระข้อความ — ระบุฟอนต์ที่มีสัญลักษณ์นี้ให้แสดงชัด */
+  .print-table .tick{
+    font-family:"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2","Arial Unicode MS","Thai Sarabun","Tahoma",sans-serif;
+    font-weight:700;
+    font-size:12pt;
+  }
+
+  /* สรุปยอด: อยู่ใต้ตาราง ชิดขวา ไม่ทับตาราง และไม่ถูกตัดข้ามหน้า */
+  .print-summary{
+    display:block !important;
+    width:100%;
+    margin-top:3mm;
+    page-break-inside:avoid;
+    break-inside:avoid;
+    text-align:right;
+  }
+  .print-summary-grid{
+    display:inline-block;
+    min-width:85mm;
+    text-align:left;
+    font-size:12pt;
+    font-weight:400;
+    line-height:1.2;
+  }
+  .print-summary-grid .ps-line{
+    display:flex;
+    justify-content:space-between;
+    gap:8mm;
+    padding:.5mm 0;
+  }
+  .print-summary-grid .ps-line b{font-weight:700;}
+  .print-summary-grid .ps-line + .ps-line{border-top:1px solid #000;}
+  .print-summary-grid .ps-note{
+    font-size:10pt;
+    font-weight:300;
+    margin-top:1mm;
+    text-align:right;
   }
 }
 
@@ -902,6 +955,38 @@ function escapePrintText(value){
     .replace(/"/g,"&quot;");
 }
 
+// ตัวช่วยพิมพ์: ระบุแถวกรรมการจากข้อความ "กรรมการ" ในช่องหมายเหตุเดิม (ไฟล์ไม่มีช่องแยกสำหรับสถานะกรรมการ)
+// รายชื่อกรรมการ (ตามที่ผู้ใช้แจ้ง) — เทียบด้วยชื่อต้น + 2 ตัวแรกของนามสกุล ตัดคำนำหน้าและช่องว่างก่อนเทียบ
+const COMMITTEE_NAMES = [
+  "นายรัตน์ชัย พรหมพาราช","นางศศิธร ภูนาเหลา","นายอนัน ศรีหนารถ",
+  "นายสำนัก พรหมหาราช","นายสาคร อุทรบุรณ์","นายบุญมาก นนทะลัย",
+  "นางประไพ นามผา","นายเฉลิม ขันตี","นายพูลสวัสดิ์ ศรีหนารถ"
+];
+function nameKey(n){
+  const parts = String(n||"").trim().replace(/^(นางสาว|นาง|นาย|น\.ส\.)\s*/,"").split(/\s+/);
+  return { first: (parts[0]||""), sur: (parts[1]||"").replace(/ด/g,"ถ").slice(0,2) };
+}
+const COMMITTEE_KEYS = COMMITTEE_NAMES.map(nameKey);
+function isCommitteeName(name){
+  const k = nameKey(name);
+  return !!k.first && COMMITTEE_KEYS.some(c => c.first===k.first && (c.sur==="" || k.sur===c.sur));
+}
+// แถวกรรมการ = ชื่ออยู่ในรายชื่อกรรมการ หรือหมายเหตุเดิมมีคำว่า "กรรมการ"
+function isCommitteeRow(row, name){ return isCommitteeName(name) || /กรรมการ/.test(row.note || ""); }
+function fmtBaht(n){ return Number(n).toLocaleString(); }
+
+function printNoteHtml(row, r, name){
+  const note = (row.note || "").trim();
+  // กรรมการ: แสดงข้อความหมายเหตุเดิม (มีคำว่า "กรรมการ") ห้ามมีเครื่องหมายถูก
+  if(isCommitteeRow(row, name)) return escapePrintText(note && /กรรมการ/.test(note) ? note : "กรรมการ" + (note ? " " + note : ""));
+  // คำนวณยอดไม่ได้ (ยังไม่ครบ/ผิดปกติ): ไม่เดาสถานะ คงหมายเหตุเดิม
+  if(r.total==null) return escapePrintText(note);
+  // ข้อความหมายเหตุอื่นที่ไม่ซ้ำกับสถานะ จะต่อท้ายไว้ ไม่ให้ข้อมูลเดิมหาย
+  const extra = (note && !/จ่าย|ชำระ|ค้าง|✓|✔|☑|เก็บแล้ว/.test(note)) ? " " + escapePrintText(note) : "";
+  if(row.paid) return '<span class="tick">✓</span>' + extra;
+  return "ค้าง " + fmtBaht(r.total) + " บาท" + extra;
+}
+
 function buildPrintForm(){
   const data = getMonthData(currVal);
 
@@ -913,10 +998,19 @@ function buildPrintForm(){
   const tbody = document.getElementById("printTbody");
   tbody.innerHTML = "";
 
+  let collected = 0, outstanding = 0, unresolved = 0, committeeCount = 0;
+
   // แบบฟอร์มกระดาษ: 16 รายชื่อ + ช่องว่างอีก 6 แถว
   for(let i=0; i<22; i++){
-    const row = i < NAMES.length ? data.rows[i] : {prev:"", curr:"", note:""};
+    const row = i < NAMES.length ? data.rows[i] : {prev:"", curr:"", note:"", paid:false};
     const r = i < NAMES.length ? calcRow(row) : {units:null, water:null, total:null};
+
+    if(i < NAMES.length){
+      if(isCommitteeRow(row, NAMES[i])) committeeCount++;          // กรรมการ: ไม่รวมในยอดชำระ/ค้าง
+      else if(r.total==null) unresolved++;               // ยอดไม่ชัดเจน: ไม่นำมาเดา
+      else if(row.paid) collected += r.total;            // ชำระแล้ว
+      else outstanding += r.total;                       // ยังไม่ชำระ
+    }
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -928,10 +1022,18 @@ function buildPrintForm(){
       <td>${i < NAMES.length && r.water != null ? r.water : ""}</td>
       <td>${i < NAMES.length ? MAINT : ""}</td>
       <td>${i < NAMES.length && r.total != null ? r.total : ""}</td>
-      <td class="p-note">${i < NAMES.length ? escapePrintText(row.note || "") : ""}</td>
+      <td class="p-note">${i < NAMES.length ? printNoteHtml(row, r, NAMES[i]) : ""}</td>
     `;
     tbody.appendChild(tr);
   }
+
+  const skipped = [];
+  if(committeeCount) skipped.push("ไม่รวมกรรมการ " + committeeCount + " แถว");
+  if(unresolved) skipped.push("ไม่รวม " + unresolved + " แถวที่ยังคำนวณยอดไม่ได้");
+  document.getElementById("printSummary").innerHTML =
+    '<div class="ps-line"><span>ยอดรวมที่เก็บได้</span><b>' + fmtBaht(collected) + ' บาท</b></div>' +
+    '<div class="ps-line"><span>ยอดค้างชำระ</span><b>' + fmtBaht(outstanding) + ' บาท</b></div>' +
+    (skipped.length ? '<div class="ps-note">(' + skipped.join(" • ") + ')</div>' : "");
 }
 
 document.getElementById("printBtn").addEventListener("click", ()=>{
